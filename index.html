@@ -1,0 +1,1103 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="description" content="Agency X Production Desk: assign video jobs, track every delivery stage, review work and score team performance. Interactive demo."><link rel="icon" href="favicon.svg" type="image/svg+xml"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Agency X Production Desk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: a quiet monochrome control room. Black wordmark, hairline rules, the "/" from the logo as the section mark, colour reserved for job status. */
+:root{
+  --bg:#F2F0EB; --surface:#FBFAF7; --sunk:#E9E6DF; --fg:#111216; --muted:#67645D; --faint:#A29E95;
+  --line:#E1DDD5; --line-strong:#CEC9BE; --ink:#111216; --on-ink:#FBFAF7; --rec:#2E3CF0; --focus:#2E3CF0;
+  --ns-bg:#EDEDEA; --ns-fg:#5B5B57; --ip-bg:#E3ECFD; --ip-fg:#1F4FB0; --ir-bg:#FBF0D6; --ir-fg:#87590A;
+  --rv-bg:#EFE7FB; --rv-fg:#6232A8; --dn-bg:#E1F3E8; --dn-fg:#1C7444; --bl-bg:#FCE4E1; --bl-fg:#B3261E;
+  --good:#1C7444; --warn:#B07A10; --bad:#C62A21;
+  --shadow:0 1px 2px rgba(18,18,18,.05),0 8px 24px rgba(18,18,18,.06);
+  --f-display:"Archivo","Helvetica Neue",Arial,system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E0F12; --surface:#16171B; --sunk:#1D1E23; --fg:#F0EEE9; --muted:#A3A097; --faint:#6E6C66;
+  --line:#2A2B30; --line-strong:#3A3B41; --ink:#F0EEE9; --on-ink:#111216; --rec:#8A93FF; --focus:#8A93FF;
+  --ns-bg:#2A2A28; --ns-fg:#C3C3BD; --ip-bg:#1B2A47; --ip-fg:#9DBBFF; --ir-bg:#3A2E12; --ir-fg:#F1C66B;
+  --rv-bg:#2D2242; --rv-fg:#C7A8FF; --dn-bg:#15301F; --dn-fg:#7FD9A2; --bl-bg:#3D1916; --bl-fg:#FF8C82;
+  --good:#7FD9A2; --warn:#F1C66B; --bad:#FF8C82; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E0F12; --surface:#16171B; --sunk:#1D1E23; --fg:#F0EEE9; --muted:#A3A097; --faint:#6E6C66;
+  --line:#2A2B30; --line-strong:#3A3B41; --ink:#F0EEE9; --on-ink:#111216; --rec:#8A93FF; --focus:#8A93FF;
+  --ns-bg:#2A2A28; --ns-fg:#C3C3BD; --ip-bg:#1B2A47; --ip-fg:#9DBBFF; --ir-bg:#3A2E12; --ir-fg:#F1C66B;
+  --rv-bg:#2D2242; --rv-fg:#C7A8FF; --dn-bg:#15301F; --dn-fg:#7FD9A2; --bl-bg:#3D1916; --bl-fg:#FF8C82;
+  --good:#7FD9A2; --warn:#F1C66B; --bad:#FF8C82; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35); color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:400 14px/1.45 var(--f-display);-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-size:.92em;font-variant-numeric:tabular-nums}
+.wrap{max-width:1280px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* header */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-row{display:flex;align-items:center;gap:16px;padding-block:14px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand img{height:22px;width:auto;display:block}
+.brand .logo-w{display:none}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .brand .logo-b{display:none}:root:not([data-theme="light"]) .brand .logo-w{display:block}}
+:root[data-theme="dark"] .brand .logo-b{display:none} :root[data-theme="dark"] .brand .logo-w{display:block}
+.brand .slash{color:var(--faint);font-weight:300;font-size:22px;line-height:1;transform:translateY(-1px)}
+.brand .desk{font-weight:500;font-size:15px;letter-spacing:.01em;white-space:nowrap}
+.live{margin-left:auto;display:flex;align-items:center;gap:8px;font:500 11px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+.live.on i{background:var(--rec);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.live.on i{animation:none}}
+nav.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin-bottom:-1px}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs a{padding:10px 14px 12px;color:var(--muted);text-decoration:none;font-weight:500;border-bottom:2px solid transparent;white-space:nowrap}
+nav.tabs a:hover{color:var(--fg)}
+nav.tabs a[aria-current="page"]{color:var(--fg);border-color:var(--ink)}
+
+main{padding-block:28px 64px}
+.view-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}
+.eyebrow{font:500 11px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;gap:8px;align-items:center}
+.eyebrow b{color:var(--rec);font-weight:500}
+h1{font-size:clamp(26px,3.6vw,36px);font-weight:600;letter-spacing:-.02em;line-height:1.1;margin:8px 0 0;text-wrap:balance}
+h2{font-size:15px;font-weight:600;margin:0;letter-spacing:.005em}
+.sub{color:var(--muted);margin:6px 0 0;max-width:62ch}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+
+.btn{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-weight:500;white-space:nowrap}
+.btn:hover{border-color:var(--fg)}
+.btn.primary{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
+.btn.primary:hover{opacity:.88}
+.btn.danger{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,var(--line))}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.sm{height:30px;padding:0 11px;font-size:13px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+
+.notice{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:12px 16px;border:1px dashed var(--line-strong);border-radius:var(--r);color:var(--muted);margin-bottom:22px;background:var(--surface)}
+.notice strong{color:var(--fg);font-weight:600}
+.notice .btn{margin-left:auto}
+
+/* stats strip */
+.strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border:1px solid var(--line);border-radius:var(--r);background:var(--surface);margin-bottom:22px}
+.stat{padding:16px 18px;border-left:1px solid var(--line);min-width:0}
+.stat:first-child{border-left:0}
+.stat .k{font:500 10.5px/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.stat .v{font-size:30px;font-weight:600;letter-spacing:-.02em;margin-top:8px;font-variant-numeric:tabular-nums}
+.stat .t{font-size:12px;color:var(--muted);margin-top:2px}
+.stat.alert .v{color:var(--bad)}
+@media (max-width:900px){.strip{grid-template-columns:repeat(3,minmax(0,1fr))}.stat:nth-child(4){border-left:0}.stat:nth-child(n+4){border-top:1px solid var(--line)}}
+@media (max-width:480px){.strip{grid-template-columns:repeat(2,minmax(0,1fr))}.stat{border-left:0!important;border-top:1px solid var(--line)}.stat:nth-child(odd){border-right:1px solid var(--line)}.stat:nth-child(-n+2){border-top:0}}
+
+.grid2{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:22px}
+@media (max-width:900px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 18px 16px;min-width:0}
+.panel-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px}
+.panel-head .hint{font-size:12px;color:var(--muted)}
+.stack{display:grid;gap:22px;min-width:0}
+
+/* status chip */
+.chip{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;border:0}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.s-ns{background:var(--ns-bg);color:var(--ns-fg)} .s-ip{background:var(--ip-bg);color:var(--ip-fg)} .s-ir{background:var(--ir-bg);color:var(--ir-fg)}
+.s-rv{background:var(--rv-bg);color:var(--rv-fg)} .s-dn{background:var(--dn-bg);color:var(--dn-fg)} .s-bl{background:var(--bl-bg);color:var(--bl-fg)}
+.prio{font:500 11px/1 var(--f-mono);letter-spacing:.04em;padding:4px 6px;border-radius:4px;border:1px solid var(--line-strong);color:var(--muted);white-space:nowrap}
+.prio.p1{border-color:transparent;background:var(--ink);color:var(--on-ink)}
+.code{font:500 12px/1 var(--f-mono);padding:4px 6px;border-radius:4px;background:var(--sunk);white-space:nowrap;display:inline-block}
+
+/* status bar */
+.sbar{display:flex;height:12px;border-radius:999px;overflow:hidden;background:var(--sunk)}
+.sbar span{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;font-size:12.5px;color:var(--muted)}
+.legend b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums;margin-left:4px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+
+/* attention list */
+.alist{list-style:none;margin:0;padding:0;display:grid}
+.alist li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.alist li:first-child{border-top:0;padding-top:2px}
+.flag{font:500 10.5px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:5px 7px;border-radius:4px;white-space:nowrap}
+.flag.bad{background:var(--bl-bg);color:var(--bl-fg)} .flag.warn{background:var(--ir-bg);color:var(--ir-fg)} .flag.info{background:var(--sunk);color:var(--muted)}
+.alist .what{min-width:0}
+.alist .what div{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.alist .what small{color:var(--muted);font-size:12px}
+.empty-line{color:var(--muted);font-size:13px;padding:8px 0}
+
+/* load bars */
+.loads{display:grid;gap:12px}
+.load{display:grid;grid-template-columns:minmax(0,130px) minmax(0,1fr) 52px;gap:12px;align-items:center}
+.load .who{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.load .who small{display:block;color:var(--muted);font-weight:400;font-size:11.5px}
+.track{position:relative;height:10px;background:var(--sunk);border-radius:999px}
+.track .band{position:absolute;top:-3px;bottom:-3px;left:70%;width:15%;border-left:1px dashed var(--line-strong);border-right:1px dashed var(--line-strong)}
+.track .fill{position:absolute;inset:0 auto 0 0;border-radius:999px;background:var(--ink)}
+.track .fill.over{background:var(--bad)}
+.load .pct{text-align:right;font:500 12.5px var(--f-mono)}
+.load .pct.over{color:var(--bad)}
+
+/* toolbar + filters */
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.search{flex:1 1 220px;min-width:0;position:relative}
+.search input{width:100%;height:36px;padding:0 12px 0 34px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface)}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint)}
+select.f{height:36px;padding:0 30px 0 12px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 52%,calc(100% - 10px) 52%;background-size:5px 5px;background-repeat:no-repeat;max-width:100%}
+.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:999px;padding:2px;background:var(--surface)}
+.seg button{height:30px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:var(--muted);font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink)}
+.count{font-size:12.5px;color:var(--muted);margin-left:auto}
+
+/* table */
+.tbl-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+table{width:100%;border-collapse:collapse;min-width:980px}
+th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font:500 10.5px/1.2 var(--f-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);white-space:nowrap;background:var(--surface);position:sticky;top:0}
+th button{all:unset;cursor:pointer;display:inline-flex;gap:4px;align-items:center}
+th button:focus-visible{outline:2px solid var(--focus)}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--sunk)}
+tbody tr:last-child td{border-bottom:0}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+td .task{font-weight:500}
+td .meta{color:var(--muted);font-size:12px}
+.days{font:500 12.5px var(--f-mono);white-space:nowrap}
+.days.late{color:var(--bad)} .days.soon{color:var(--warn)}
+.inline-status{appearance:none;border:0;padding:0 22px 0 9px;height:24px;border-radius:999px;font-weight:600;font-size:12px;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);
+  background-position:calc(100% - 11px) 55%,calc(100% - 7px) 55%;background-size:4px 4px;background-repeat:no-repeat}
+
+/* kanban */
+.board{display:grid;grid-template-columns:repeat(6,minmax(220px,1fr));gap:12px;overflow-x:auto;padding-bottom:8px}
+.col{background:var(--sunk);border-radius:var(--r);padding:10px;min-height:200px;display:flex;flex-direction:column;gap:8px;transition:outline-color .15s;outline:2px dashed transparent;outline-offset:-2px}
+.col.drop{outline-color:var(--line-strong)}
+.col-head{display:flex;justify-content:space-between;align-items:center;padding:2px 4px 6px}
+.col-head .n{font:500 12px var(--f-mono);color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:11px 12px;display:grid;gap:8px;cursor:grab;box-shadow:0 1px 0 rgba(0,0,0,.02)}
+.card:hover{border-color:var(--line-strong)}
+.card.dragging{opacity:.4}
+.card .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card .t{font-weight:500;line-height:1.3}
+.card .m{font-size:12px;color:var(--muted);display:flex;gap:6px;flex-wrap:wrap}
+
+/* schedule */
+.sched{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.sgrid{display:grid;min-width:920px;position:relative}
+.sgrid .cell{border-bottom:1px solid var(--line);border-left:1px solid var(--line);min-height:44px}
+.sgrid .rowhead{padding:10px 12px;border-bottom:1px solid var(--line);font-weight:500;position:sticky;left:0;background:var(--surface);z-index:2}
+.sgrid .rowhead small{display:block;color:var(--muted);font-weight:400;font-size:11.5px}
+.sgrid .dayh{padding:10px 6px 8px;border-left:1px solid var(--line);border-bottom:1px solid var(--line);text-align:center;font:500 11px/1.3 var(--f-mono);color:var(--muted)}
+.sgrid .dayh b{display:block;color:var(--fg);font:600 15px/1.2 var(--f-display)}
+.sgrid .dayh.today b{color:var(--rec)}
+.sgrid .wknd{background:color-mix(in srgb,var(--sunk) 60%,transparent)}
+.lane{position:relative;border-bottom:1px solid var(--line)}
+.bar{position:absolute;height:26px;border-radius:6px;padding:0 8px;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;overflow:hidden;white-space:nowrap;cursor:pointer;border:1px solid transparent}
+.bar.late{border-color:var(--bad)}
+.todayline{position:absolute;top:0;bottom:0;width:2px;background:var(--rec);opacity:.7;pointer-events:none;z-index:1}
+
+/* team */
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.person{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:14px;min-width:0}
+.person-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--sunk);display:grid;place-items:center;font-weight:600;flex:none}
+.person-name{display:flex;gap:12px;align-items:center;min-width:0}
+.person-name div{min-width:0}
+.person-name strong{display:block;font-size:15px}
+.person-name small{color:var(--muted)}
+.skills{display:grid;gap:7px}
+.skill{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;font-size:13px}
+.pips{display:flex;gap:4px}
+.pip{width:22px;height:8px;border-radius:2px;background:var(--sunk);border:0;padding:0}
+.pip.on{background:var(--ink)}
+button.pip{cursor:pointer}
+button.pip:hover{outline:1px solid var(--line-strong)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}
+.kv dt{color:var(--muted)} .kv dd{margin:0}
+.minijobs{display:grid;gap:6px;font-size:13px}
+.minijobs div{display:flex;gap:8px;align-items:center;min-width:0}
+.minijobs span.t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+
+/* scores */
+.score{display:inline-flex;gap:3px;vertical-align:middle}
+.score i{width:8px;height:8px;border-radius:50%;background:var(--sunk)}
+.score i.on{background:var(--ink)}
+.avg{font:600 15px var(--f-display);font-variant-numeric:tabular-nums}
+.avg.good{color:var(--good)} .avg.bad{color:var(--bad)}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(10,10,10,.35);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);background:var(--surface);z-index:41;box-shadow:var(--shadow);transform:translateX(102%);transition:transform .25s ease;display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.drawer.open{transform:none}
+@media (prefers-reduced-motion:reduce){.drawer,.scrim{transition:none}}
+.d-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 22px;border-bottom:1px solid var(--line)}
+.d-body{flex:1;overflow-y:auto;padding:20px 22px;display:grid;gap:14px;align-content:start}
+.d-foot{display:flex;gap:8px;align-items:center;padding:14px 22px;border-top:1px solid var(--line);flex-wrap:wrap}
+.d-foot .spacer{flex:1}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fgrid .full{grid-column:1/-1}
+@media (max-width:480px){.fgrid{grid-template-columns:1fr}}
+label.fl{display:grid;gap:6px;font-size:12px;font-weight:500;color:var(--muted)}
+label.fl input,label.fl select,label.fl textarea{height:38px;padding:0 11px;border:1px solid var(--line-strong);border-radius:8px;background:var(--bg);color:var(--fg);font-size:14px;font-weight:400;width:100%;min-width:0}
+label.fl textarea{height:auto;min-height:72px;padding:9px 11px;resize:vertical}
+.fsec{font:500 10.5px/1 var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin-top:6px;grid-column:1/-1;display:flex;gap:8px}
+.fsec::before{content:"/";color:var(--rec)}
+.confirm{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px}
+.x{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:transparent;display:grid;place-items:center}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--on-ink);padding:10px 16px;border-radius:999px;font-weight:500;opacity:0;transition:all .2s;z-index:60;pointer-events:none;max-width:calc(100% - 32px)}
+.toast.show{opacity:1;transform:translateX(-50%)}
+
+/* empty / loading */
+.emptystate{border:1px dashed var(--line-strong);border-radius:var(--r);padding:40px 24px;text-align:center;color:var(--muted);background:var(--surface)}
+.emptystate h2{color:var(--fg);font-size:18px;margin-bottom:6px}
+.skel{height:14px;border-radius:6px;background:var(--sunk);margin:10px 0}
+footer.foot{border-top:1px solid var(--line);padding-block:18px;color:var(--muted);font-size:12px;display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:space-between}
+.hide-sm{} @media (max-width:640px){.hide-sm{display:none}}
+
+/* v2 additions: roles, task flow, comments, scoring */
+:root{--as-bg:#F1ECE3;--as-fg:#7A5A28;--ac-bg:#DDF1EF;--ac-fg:#0F6B66}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--as-bg:#2E2619;--as-fg:#E2C38F;--ac-bg:#12302E;--ac-fg:#7FD6CF}}
+:root[data-theme="dark"]{--as-bg:#2E2619;--as-fg:#E2C38F;--ac-bg:#12302E;--ac-fg:#7FD6CF}
+.s-as{background:var(--as-bg);color:var(--as-fg)} .s-ac{background:var(--ac-bg);color:var(--ac-fg)}
+.actor{display:flex;align-items:center;gap:8px;margin-left:auto;min-width:0}
+.actor select{height:32px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);padding:0 28px 0 10px;max-width:220px;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 14px) 52%,calc(100% - 9px) 52%;background-size:5px 5px;background-repeat:no-repeat}
+.actor .lbl{font:500 10.5px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.me-pill{display:flex;align-items:center;gap:8px;padding:3px 10px 3px 3px;border:1px solid var(--line);border-radius:999px;white-space:nowrap;min-width:0}
+.me-pill img,.me-pill .avatar{width:26px;height:26px;border-radius:50%;font-size:11px}
+.me-pill span{overflow:hidden;text-overflow:ellipsis}
+.role-tag{font:500 10px/1 var(--f-mono);letter-spacing:.07em;text-transform:uppercase;padding:4px 6px;border-radius:4px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.role-tag.admin{background:var(--ink);color:var(--on-ink)}
+.top-row .live{margin-left:0}
+@media (max-width:640px){.actor .lbl{display:none}.top-row{flex-wrap:wrap}.actor{margin-left:0;order:3;width:100%}.actor select{max-width:none;flex:1}}
+.preview-band{background:var(--ink);color:var(--on-ink)}
+.preview-band .wrap{display:flex;gap:12px;align-items:center;padding-block:8px;font-size:13px;flex-wrap:wrap}
+.preview-band button{margin-left:auto;background:transparent;color:inherit;border:1px solid currentColor;border-radius:999px;height:28px;padding:0 12px}
+nav.tabs a .badge{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;margin-left:6px;border-radius:999px;background:var(--rec);color:#fff;font:600 11px/1 var(--f-display)}
+
+/* my tasks */
+.groups{display:grid;gap:26px}
+.group h2{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.group h2 .n{font:500 12px var(--f-mono);color:var(--muted)}
+.tasks{display:grid;gap:10px}
+.task-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 18px;align-items:center;padding:14px 16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);cursor:pointer}
+.task-card:hover{border-color:var(--line-strong)}
+.task-card .l{min-width:0;display:grid;gap:6px}
+.task-card .t{font-weight:600;font-size:15px}
+.task-card .m{display:flex;gap:8px;flex-wrap:wrap;align-items:center;color:var(--muted);font-size:12.5px}
+.task-card .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.progress{display:flex;gap:3px;align-items:center}
+.progress i{width:18px;height:5px;border-radius:2px;background:var(--line-strong)}
+.progress i.on{background:var(--ink)}
+@media (max-width:560px){.task-card{grid-template-columns:minmax(0,1fr)}.task-card .r{justify-content:flex-start}}
+
+/* task drawer */
+.drawer.wide{width:min(640px,100%)}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:14px;border:1px solid var(--line);border-radius:var(--r)}
+.facts div{min-width:0}
+.facts small{display:block;font:500 10px/1.3 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.facts span{font-weight:500;overflow-wrap:anywhere}
+@media (max-width:480px){.facts{grid-template-columns:1fr 1fr}}
+.brief{white-space:pre-wrap;color:var(--fg);font-size:14px;line-height:1.55;margin:0}
+.flow{display:grid;gap:0;position:relative}
+.step{display:grid;grid-template-columns:22px minmax(0,1fr);gap:12px;padding-bottom:16px;position:relative}
+.step::before{content:"";position:absolute;left:10px;top:22px;bottom:0;width:2px;background:var(--line)}
+.step:last-child::before{display:none}
+.step .dotc{width:22px;height:22px;border-radius:50%;border:2px solid var(--line-strong);background:var(--surface);display:grid;place-items:center;z-index:1}
+.step.done .dotc{background:var(--ink);border-color:var(--ink);color:var(--on-ink)}
+.step.late .dotc{border-color:var(--bad)}
+.step .body{min-width:0;display:grid;gap:6px;padding-top:1px}
+.step .row1{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.step .row1 strong{font-weight:600}
+.step .row1 .when{font:500 12px var(--f-mono);color:var(--muted)}
+.tag{font:500 10.5px/1 var(--f-mono);padding:4px 6px;border-radius:4px;letter-spacing:.04em;white-space:nowrap}
+.tag.ok{background:var(--dn-bg);color:var(--dn-fg)} .tag.late{background:var(--bl-bg);color:var(--bl-fg)} .tag.int{background:var(--rv-bg);color:var(--rv-fg)} .tag.cli{background:var(--ir-bg);color:var(--ir-fg)}
+.inline-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.inline-form input,.inline-form textarea{flex:1 1 200px;min-width:0;height:34px;padding:0 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--bg);color:var(--fg)}
+.inline-form textarea{height:60px;padding:8px 10px;flex-basis:100%;resize:vertical}
+a.linkout{color:var(--fg);text-decoration:underline;text-decoration-color:var(--line-strong);text-underline-offset:3px;overflow-wrap:anywhere;font-size:13px}
+.hr{height:1px;background:var(--line);margin:4px 0}
+.thread{display:grid;gap:12px}
+.msg{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px}
+.msg .avatar{width:30px;height:30px;font-size:11px}
+.msg .who{font-weight:600;font-size:13px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.msg .who small{font:400 11.5px var(--f-mono);color:var(--muted)}
+.msg p{margin:2px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.sec-title{font:500 10.5px/1 var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);display:flex;gap:8px;align-items:center}
+.sec-title::before{content:"/";color:var(--rec)}
+.stagepick{display:grid;gap:8px}
+.stagepick label{display:grid;grid-template-columns:20px minmax(0,1fr) 150px;gap:10px;align-items:center;font-size:14px}
+.stagepick input[type=date]{height:34px;border:1px solid var(--line-strong);border-radius:8px;background:var(--bg);color:var(--fg);padding:0 8px;min-width:0}
+@media (max-width:420px){.stagepick label{grid-template-columns:20px minmax(0,1fr)}.stagepick input[type=date]{grid-column:2}}
+
+/* performance */
+.scorebar{display:flex;align-items:center;gap:10px}
+.scorebar .track{flex:1;min-width:60px}
+.scorebar b{font:600 18px var(--f-display);font-variant-numeric:tabular-nums;min-width:30px}
+.grade{font:500 10.5px/1 var(--f-mono);letter-spacing:.05em;padding:4px 7px;border-radius:4px;white-space:nowrap}
+.g-ex{background:var(--dn-bg);color:var(--dn-fg)} .g-st{background:var(--ip-bg);color:var(--ip-fg)} .g-ns{background:var(--ir-bg);color:var(--ir-fg)} .g-ar{background:var(--bl-bg);color:var(--bl-fg)} .g-na{background:var(--sunk);color:var(--muted)}
+.comp{display:grid;gap:12px}
+.comp-row{display:grid;grid-template-columns:minmax(0,170px) minmax(0,1fr) 92px;gap:12px;align-items:center;font-size:13px}
+.comp-row .track{height:8px}
+.comp-row .val{text-align:right;font:500 12.5px var(--f-mono)}
+.comp-row small{display:block;color:var(--muted);font-size:11.5px}
+@media (max-width:520px){.comp-row{grid-template-columns:minmax(0,1fr) 80px}.comp-row .track{grid-column:1/-1;grid-row:2}}
+.weights{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;font-size:12.5px;color:var(--muted)}
+.weights b{display:block;color:var(--fg);font-size:13px}
+.profile-head{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.profile-head .avatar,.profile-head img.av{width:56px;height:56px;border-radius:50%;font-size:18px;flex:none}
+.big-score{font:600 54px/1 var(--f-display);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.link-row{display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:var(--surface);width:100%;text-align:left}
+.link-row:hover{border-color:var(--fg)}
+.link-row img{width:28px;height:28px;border-radius:50%}
+.claims{display:grid;gap:8px;margin-bottom:22px}
+.callout{padding:16px 18px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);display:grid;gap:12px;margin-bottom:22px}
+.callout h2{font-size:16px}
+
+
+.axlogo{display:inline-flex;align-items:center;gap:3px;color:var(--fg);line-height:1}
+.axword{font:800 21px/1 var(--f-display);letter-spacing:-.035em}
+.axmark{width:18px;height:18px;display:block;margin-top:2px}
+.brand .logo-b,.brand .logo-w{display:none!important}
+</style>
+<header class="top">
+  <div class="wrap">
+    <div class="top-row">
+      <div class="brand">
+        <span class="axlogo" aria-label="Agency X"><span class="axword">Agency</span><svg class="axmark" viewBox="0 0 40 40" aria-hidden="true"><rect x="16.5" y="-3" width="7" height="46" rx="1.5" transform="rotate(-45 20 20)" fill="currentColor"/><rect x="16.5" y="-3" width="7" height="46" rx="1.5" transform="rotate(45 20 20)" fill="var(--rec)"/></svg></span>
+        <span class="slash" aria-hidden="true">/</span>
+        <span class="desk">Production Desk</span>
+      </div>
+      <div class="actor" id="actor"></div>
+      <div class="live" id="live" title="Connection to the shared tracker"><i></i><span id="liveText">Connecting</span></div>
+    </div>
+    <nav class="tabs" aria-label="Sections" id="tabs"></nav>
+  </div>
+</header>
+<div class="preview-band" id="previewBand" hidden><div class="wrap"><span id="previewText"></span><button type="button" data-act="endPreview">Back to my view</button></div></div>
+
+<main class="wrap" id="main" aria-live="polite"></main>
+
+<div class="wrap"><footer class="foot">
+  <span>Agency X / Video Production. A working demo: changes stay in your browser until you reload.</span>
+  <span id="todayLbl" class="mono"></span>
+</footer></div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="dTitle">
+  <form id="dForm" novalidate style="display:contents">
+    <div class="d-head"><div style="min-width:0"><div class="eyebrow" id="dEyebrow"></div><h2 id="dTitle" style="font-size:20px;margin-top:6px;overflow-wrap:anywhere"></h2></div>
+      <button type="button" class="x" data-act="close" aria-label="Close"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.6"/></svg></button></div>
+    <div class="d-body" id="dBody"></div>
+    <div class="d-foot" id="dFoot"></div>
+  </form>
+</aside>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+"use strict";
+
+const DEMO = (() => {
+  const SEED = [{"path":"team/mostafa","data":{"name":"Mostafa E.","role":"Video Production Manager","craft":"Production","capacity":40,"skills":{"edit":3,"color":3,"motion":2,"camera":4,"sound":2,"ai":4,"arabic":4},"training":"Agency AI pipeline lead","review":"2027-01-28","uid":"u-admin","sample":true}},{"path":"team/rana","data":{"name":"Rana K.","role":"Creative Director","craft":"Creative","capacity":40,"skills":{"edit":3,"color":2,"motion":3,"camera":2,"sound":2,"ai":3,"arabic":4},"training":"","review":null,"uid":null,"sample":true}},{"path":"team/hadi","data":{"name":"Hadi S.","role":"Traffic Manager","craft":"Traffic","capacity":40,"skills":{"edit":1,"color":1,"motion":1,"camera":1,"sound":1,"ai":2,"arabic":3},"training":"","review":null,"uid":null,"sample":true}},{"path":"team/sara","data":{"name":"Sara M.","role":"Editor","craft":"Editing","capacity":40,"skills":{"edit":4,"color":3,"motion":2,"camera":1,"sound":3,"ai":2,"arabic":3},"training":"Colour grading in Resolve, level 2","review":"2026-11-30","uid":null,"sample":true}},{"path":"team/lina","data":{"name":"Lina H.","role":"Motion Designer","craft":"Motion graphics","capacity":40,"skills":{"edit":2,"color":1,"motion":4,"camera":1,"sound":1,"ai":3,"arabic":4},"training":"3D product renders in Blender","review":"2026-12-14","uid":null,"sample":true}},{"path":"team/omar","data":{"name":"Omar K.","role":"Videographer / DOP","craft":"Camera & lighting","capacity":36,"skills":{"edit":2,"color":2,"motion":1,"camera":4,"sound":2,"ai":1,"arabic":2},"training":"Shot lists and pre-production paperwork","review":"2026-11-23","uid":null,"sample":true}},{"path":"team/karim","data":{"name":"Karim T.","role":"Sound Designer","craft":"Sound & music","capacity":32,"skills":{"edit":2,"color":1,"motion":1,"camera":1,"sound":4,"ai":2,"arabic":3},"training":"Arabic VO direction","review":"2026-12-27","uid":null,"sample":true}},{"path":"team/youssef","data":{"name":"Youssef A.","role":"AI Producer","craft":"AI production","capacity":40,"skills":{"edit":3,"color":2,"motion":3,"camera":1,"sound":2,"ai":4,"arabic":2},"training":"Rights-safe AI workflows for regulated clients","review":"2026-12-07","uid":null,"sample":true}},{"path":"team/nour","data":{"name":"Nour S.","role":"Production Coordinator","craft":"Production","capacity":40,"skills":{"edit":1,"color":1,"motion":1,"camera":2,"sound":1,"ai":2,"arabic":4},"training":"Permits and location contracts","review":"2027-01-08","uid":null,"sample":true}},{"path":"jobs/k1101","data":{"jobId":"AX-1101","priority":"P2 High","task":"Ramadan teaser 30s, final cut","client":"Northwind Bank","format":"16:9 + 9:16","assignee":"sara","assignedAt":"2026-09-11T07:00:00.000Z","assignedBy":"hadi","start":"2026-09-12","deadline":"2026-09-20","estHours":24,"equipment":"","vendor":"","brief":"","briefLink":"","stages":[{"k":"rough","due":"2026-09-16"},{"k":"fine","due":"2026-09-18"},{"k":"master","due":"2026-09-20"}],"reviews":[{"type":"client","at":"2026-09-19T11:00:00.000Z","note":"Swap music to option B, tighten end card","by":"rana"}],"approvedAt":"2026-09-20T13:00:00.000Z","approvedBy":"rana","createdAt":"2026-09-11T07:00:00.000Z","sample":true}},{"path":"jobs/k1102","data":{"jobId":"AX-1102","priority":"P2 High","task":"Product launch cutdowns x6","client":"Harbor Retail Group","format":"6 x 15s 9:16","assignee":"sara","assignedAt":"2026-09-29T07:00:00.000Z","assignedBy":"hadi","start":"2026-09-30","deadline":"2026-10-07","estHours":18,"equipment":"","vendor":"","brief":"","briefLink":"","stages":[{"k":"rough","due":"2026-10-03"},{"k":"master","due":"2026-10-07"}],"reviews":[],"approvedAt":"2026-10-08T13:00:00.000Z","approvedBy":"rana","createdAt":"2026-09-29T07:00:00.000Z","sample":true}},{"path":"jobs/k1103","data":{"jobId":"AX-1103","priority":"P2 High","task":"CEO message, edit and supers","client":"Sable Properties","format":"2 min 16:9","assignee":"sara","assignedAt":"2026-10-18T07:00:00.000Z","assignedBy":"hadi","start":"2026-10-19","deadline":"2026-10-25","estHours":16,"equipment":"","vendor":"","brief":"","briefLink":"","stages":[{"k":"rough","due":"2026-10-22"},{"k":"fine","due":"2026-10-24"},{"k":"master","due":"2026-10-25"}],"reviews":[{"type":"internal","at":"2026-10-24T11:00:00.000Z","note":"Arabic supers misaligned on 3 shots","by":"rana"}],"approvedAt":"2026-10-26T13:00:00.000Z","approvedBy":"rana","createdAt":"2026-10-18T07:00:00.000Z","sample":true}},{"path":"jobs/k1104","data":{"jobId":"AX-1104","priority":"P2 High","task":"Animated logo sting","client":"Meridian Holding","format":"5s 4K + loops","assignee":"lina","assignedAt":"2026-09-14T07:00:00.000Z","assignedBy":"hadi","start":"2026-09-15","deadline":"2026-09-22","estHours":14,"equipment":"","vendor":"","brief":"","briefLink":"","stages":[{"k":"rough","due":"2026-09-19"},{"k":"master","due":"2026-09-22"}],"reviews":[],"approvedAt":"2026-09-24T13:00:00.000Z","approvedBy":"rana","createdAt":"2026-09-14T07:00:00.000Z","sample":true}},{"path":"jobs/k1105","data":{"jobId":"AX-1105","priority":"P2 High","task":"Explainer, 60s 2D","client":"Northwind Bank","format":"60s 16:9","assignee":"lina","assignedAt":"2026-10-04T07:00:00.000Z","assignedBy":"hadi","start":"2026-10-05","deadline":"2026-10-16","estHours":32,"equipment":"","vendor":"","brief":"","briefLink":"","stages":[{"k":"rough","due":"2026-10-10"},{"k":"fine","due":"2026-10-14"},{"k":"master","due":"2026-10-16"}],"reviews":[{"type":"internal","at":"2026-10-15T11:00:00.000Z","note":"Pacing in scene 3 drags, simplify the icon set","by":"rana"},{"type":"client","at":"2026-10-16T11:00:00.000Z","note":"Legal: add disclaimer frame","by":"hadi"}],"approvedAt":"2026-10-18T13:00:00.000Z","approvedBy":"rana","createdAt":"2026-10-04T07:00:00.000Z","sample":true}},{"path":"jobs/k1106","data":{"jobId":"AX-1106","priority":"P2 High","task":"Social stickers pack","client":"Kite Delivery","format":"12 GIF stickers","assignee":"lina","assignedAt":"2026-10-27T07:00:00.000Z","assignedBy":"hadi","start":"2026-10-28","deadline":"2026-11-01","estHours":10,"equipment":"","vendor":"","brief":"","briefLink":"","stages":[{"k":"master","due":"2026-11-01"}],"reviews":[],"approvedAt":"2026-11-02T13:00:00.000Z","approvedBy":"rana","createdAt":"2026-10-27T07:00:00.000Z","sample":true}},{"path":"jobs/k1107","data":{"jobId":"AX-1107","priority":"P2 High","task":"Hotel walkthrough shoot","client":"Atlas Hotels","format":"Shoot day, 4K log","assignee":"omar","assignedAt":"2026-09-19T07:00:00.000Z","assignedBy":"hadi","start":"2026-09-20","deadline":"2026-09-24","estHours":20,"equipment":"CAM-FX3-01, LNS-2470-01","vendor":"","brief":"","briefLink":"","stages":[{"k":"prep","due":"2026-09-22"},{"k":"shoot","due":"2026-09-24"}],"reviews":[{"type":"internal","at":"2026-09-25T11:00:00.000Z","note":"Missing room-tour B-roll, reshoot pickups","by":"mostafa"}],"approvedAt":"2026-09-27T13:00:00.000Z","approvedBy":"rana","createdAt":"2026-09-19T07:00:00.000Z","sample":true}},{"path":"jobs/k1108","data":{"jobId":"AX-1108","priority":"P2 High","task":"Tower exterior timelapse","client":"Crestline Developments","format":"4K timelapse","assignee":"omar","assignedAt":"2026-10-09T07:00:00.000Z","assignedBy":"hadi","start":"2026-10-10","deadline":"2026-10-14","estHours":12,"equipment":"CAM-FX3-02","vendor":"","brief":"","briefLink":"","stages":[{"k":"prep","due":"2026-10-11"},{"k":"shoot","due":"2026-10-14"}],"reviews":[{"type":"client","at":"2026-10-17T11:00:00.000Z","note":"Client wants sunset version too","by":"hadi"}],"approvedAt":"2026-10-19T13:00:00.000Z","approvedBy":"rana","createdAt":"2026-10-09T07:00:00.000Z","sample":true}},{"path":"jobs/k1109","data":{"jobId":"AX-1109","priority":"P2 High","task":"Radio spot mix x3","client":"Civic Transit","format":"3 x 30s","assignee":"karim","assignedAt":"2026-09-24T07:00:00.000Z","assignedBy":"hadi","start":"2026-09-25","deadline":"2026-09-29","estHours":8,"equipment":"","vendor":"","brief":"","briefLink":"","stages":[{"k":"rough","due":"2026-09-27"},{"k":"master","due":"2026-09-29"}],"reviews":[],"approvedAt":"2026-09-30T13:00:00.000Z","approvedBy":"rana","createdAt":"2026-09-24T07:00:00.000Z","sample":true}},{"path":"jobs/k1110","data":{"jobId":"AX-1110","priority":"P2 High","task":"Sonic logo","client":"Sable Properties","format":"3s + variations","assignee":"karim","assignedAt":"2026-10-14T07:00:00.000Z","assignedBy":"hadi","start":"2026-10-15","deadline":"2026-10-20","estHours":10,"equipment":"","vendor":"","brief":"","briefLink":"","stages":[{"k":"rough","due":"2026-10-17"},{"k":"master","due":"2026-10-20"}],"reviews":[],"approvedAt":"2026-10-21T13:00:00.000Z","approvedBy":"rana","createdAt":"2026-10-14T07:00:00.000Z","sample":true}},{"path":"jobs/k1111","data":{"jobId":"AX-1111","priority":"P2 High","task":"AI moodfilm for pitch","client":"Coastline Tourism","format":"45s concept film","assignee":"youssef","assignedAt":"2026-10-11T07:00:00.000Z","assignedBy":"hadi","start":"2026-10-12","deadline":"2026-10-18","estHours":20,"equipment":"","vendor":"","brief":"","briefLink":"","stages":[{"k":"shoot","due":"2026-10-14"},{"k":"rough","due":"2026-10-16"},{"k":"master","due":"2026-10-18"}],"reviews":[{"type":"internal","at":"2026-10-17T11:00:00.000Z","note":"Faces drift between shots, lock the character","by":"mostafa"}],"approvedAt":"2026-10-19T13:00:00.000Z","approvedBy":"rana","createdAt":"2026-10-11T07:00:00.000Z","sample":true}},{"path":"jobs/k1112","data":{"jobId":"AX-1112","priority":"P2 High","task":"Product stills to motion x8","client":"Orbit Market","format":"8 x 6s loops","assignee":"youssef","assignedAt":"2026-10-25T07:00:00.000Z","assignedBy":"hadi","start":"2026-10-26","deadline":"2026-10-31","estHours":12,"equipment":"","vendor":"","brief":"","briefLink":"","stages":[{"k":"shoot","due":"2026-10-28"},{"k":"master","due":"2026-10-31"}],"reviews":[],"approvedAt":"2026-11-01T13:00:00.000Z","approvedBy":"rana","createdAt":"2026-10-25T07:00:00.000Z","sample":true}},{"path":"jobs/k1113","data":{"jobId":"AX-1113","priority":"P2 High","task":"Location permits, Hatta shoot","client":"Coastline Tourism","format":"Permits + call sheet","assignee":"nour","assignedAt":"2026-10-06T07:00:00.000Z","assignedBy":"hadi","start":"2026-10-07","deadline":"2026-10-13","estHours":10,"equipment":"","vendor":"","brief":"","briefLink":"","stages":[{"k":"prep","due":"2026-10-13"}],"reviews":[],"approvedAt":"2026-10-14T13:00:00.000Z","approvedBy":"rana","createdAt":"2026-10-06T07:00:00.000Z","sample":true}},{"path":"jobs/k1114","data":{"jobId":"AX-1114","priority":"P1 Urgent","task":"National Day film, edit","client":"Lumen Telecom","format":"90s 16:9 + 9:16","assignee":"sara","assignedAt":"2026-11-02T07:00:00.000Z","assignedBy":"hadi","start":"2026-11-03","deadline":"2026-11-12","estHours":30,"equipment":"EDT-WS-02","vendor":"","brief":"Hero film for 2 December. Arabic VO, English supers. Keep under 90s. Music licensed from Artlist.","briefLink":"","stages":[{"k":"rough","due":"2026-11-07"},{"k":"fine","due":"2026-11-10"},{"k":"master","due":"2026-11-12"}],"reviews":[],"approvedAt":null,"approvedBy":null,"createdAt":"2026-11-02T07:00:00.000Z","sample":true}},{"path":"jobs/k1115","data":{"jobId":"AX-1115","priority":"P2 High","task":"Lower-thirds and end card pack","client":"Lumen Telecom","format":"AE templates","assignee":"lina","assignedAt":"2026-11-05T07:00:00.000Z","assignedBy":"hadi","start":"2026-11-06","deadline":"2026-11-11","estHours":12,"equipment":"","vendor":"","brief":"Match the National Day film. Bilingual, RTL-safe.","briefLink":"","stages":[{"k":"rough","due":"2026-11-09"},{"k":"master","due":"2026-11-11"}],"reviews":[],"approvedAt":null,"approvedBy":null,"createdAt":"2026-11-05T07:00:00.000Z","sample":true}},{"path":"jobs/k1116","data":{"jobId":"AX-1116","priority":"P2 High","task":"Interview shoot, 3 execs","client":"Sable Properties","format":"2 cam interview","assignee":"omar","assignedAt":"2026-11-06T07:00:00.000Z","assignedBy":"hadi","start":"2026-11-07","deadline":"2026-11-10","estHours":16,"equipment":"CAM-FX3-01, CAM-FX3-02, LGT-AP3-02, AUD-ST-01","vendor":"","brief":"Client HQ, floor 12. Two-camera setup, 85mm close. Releases on site.","briefLink":"","stages":[{"k":"prep","due":"2026-11-08"},{"k":"shoot","due":"2026-11-10"}],"reviews":[],"approvedAt":null,"approvedBy":null,"createdAt":"2026-11-06T07:00:00.000Z","sample":true}},{"path":"jobs/k1117","data":{"jobId":"AX-1117","priority":"P2 High","task":"Mix and master, National Day","client":"Lumen Telecom","format":"Stereo + 5.1","assignee":"karim","assignedAt":"2026-11-07T07:00:00.000Z","assignedBy":"hadi","start":"2026-11-08","deadline":"2026-11-12","estHours":8,"equipment":"","vendor":"","brief":"","briefLink":"","stages":[{"k":"master","due":"2026-11-12"}],"reviews":[],"approvedAt":null,"approvedBy":null,"createdAt":"2026-11-07T07:00:00.000Z","sample":true}},{"path":"jobs/k1118","data":{"jobId":"AX-1118","priority":"P2 High","task":"AI product visuals, Ramadan","client":"Orbit Market","format":"20 key visuals","assignee":"youssef","assignedAt":"2026-10-31T07:00:00.000Z","assignedBy":"hadi","start":"2026-11-01","deadline":"2026-11-08","estHours":24,"equipment":"","vendor":"","brief":"","briefLink":"","stages":[{"k":"shoot","due":"2026-11-05"},{"k":"rough","due":"2026-11-07"},{"k":"master","due":"2026-11-08"}],"reviews":[{"type":"internal","at":"2026-11-08T11:00:00.000Z","note":"Hands and packaging text need cleanup on 4 visuals","by":"mostafa"}],"approvedAt":null,"approvedBy":null,"createdAt":"2026-10-31T07:00:00.000Z","sample":true}},{"path":"jobs/k1119","data":{"jobId":"AX-1119","priority":"P2 High","task":"Studio and talent booking, Ramadan shoot","client":"Northwind Bank","format":"Studio, 6 talents","assignee":"nour","assignedAt":"2026-11-04T07:00:00.000Z","assignedBy":"hadi","start":"2026-11-05","deadline":"2026-11-13","estHours":10,"equipment":"","vendor":"","brief":"Studio X preferred. 6 talents, family casting. Hold dates 14 to 15 Nov.","briefLink":"","stages":[{"k":"prep","due":"2026-11-13"}],"reviews":[],"approvedAt":null,"approvedBy":null,"createdAt":"2026-11-04T07:00:00.000Z","sample":true}},{"path":"jobs/k1120","data":{"jobId":"AX-1120","priority":"P3 Normal","task":"Case study film","client":"Harbor Retail Group","format":"2 min 16:9","assignee":"sara","assignedAt":"2026-11-10T07:00:00.000Z","assignedBy":"hadi","start":"2026-11-11","deadline":"2026-11-18","estHours":20,"equipment":"","vendor":"","brief":"","briefLink":"","stages":[{"k":"rough","due":"2026-11-14"},{"k":"fine","due":"2026-11-16"},{"k":"master","due":"2026-11-18"}],"reviews":[],"approvedAt":null,"approvedBy":null,"createdAt":"2026-11-10T07:00:00.000Z","sample":true}},{"path":"jobs/k1121","data":{"jobId":"AX-1121","priority":"P2 High","task":"Animated infographic","client":"Civic Transit","format":"45s 16:9","assignee":"lina","assignedAt":"2026-11-03T07:00:00.000Z","assignedBy":"hadi","start":"2026-11-04","deadline":"2026-11-14","estHours":22,"equipment":"","vendor":"","brief":"Metro ridership stats 2026. Data sheet in the brief folder.","briefLink":"","stages":[{"k":"rough","due":"2026-11-09"},{"k":"fine","due":"2026-11-12"},{"k":"master","due":"2026-11-14"}],"reviews":[],"approvedAt":null,"approvedBy":null,"createdAt":"2026-11-03T07:00:00.000Z","sample":true}},{"path":"jobs/k1122","data":{"jobId":"AX-1122","priority":"P2 High","task":"Behind-the-scenes reel","client":"Meridian Holding","format":"60s 9:16","assignee":"","assignedAt":null,"assignedBy":null,"start":"2026-11-12","deadline":"2026-11-17","estHours":10,"equipment":"","vendor":"","brief":"Shoot during the Meridian Holding event, 13 Nov.","briefLink":"","stages":[{"k":"shoot","due":"2026-11-13"},{"k":"master","due":"2026-11-17"}],"reviews":[],"approvedAt":null,"approvedBy":null,"createdAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-sara/jobs/k1101","data":{"acceptedAt":"2026-09-11T07:36:00.000Z","startedAt":"2026-09-12T05:30:00.000Z","stages":{"rough":{"doneAt":"2026-09-16T12:00:00.000Z","link":"https://f.io/agencyx-1101-rough"},"fine":{"doneAt":"2026-09-18T12:00:00.000Z","link":"https://f.io/agencyx-1101-fine"},"master":{"doneAt":"2026-09-20T12:00:00.000Z","link":"https://f.io/agencyx-1101-master"}},"submissions":[{"at":"2026-09-19T09:00:00.000Z","link":"https://f.io/agencyx-1101-v1","note":"V1 with music option A"},{"at":"2026-09-20T09:00:00.000Z","link":"https://f.io/agencyx-1101-v2","note":"Client notes applied"}],"actualHours":22,"updatedAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-sara/jobs/k1102","data":{"acceptedAt":"2026-09-29T08:12:00.000Z","startedAt":"2026-09-30T05:30:00.000Z","stages":{"rough":{"doneAt":"2026-10-03T12:00:00.000Z","link":"https://f.io/agencyx-1102-rough"},"master":{"doneAt":"2026-10-07T12:00:00.000Z","link":"https://f.io/agencyx-1102-master"}},"submissions":[{"at":"2026-10-07T09:00:00.000Z","link":"https://f.io/agencyx-1102-v1","note":"All six exports"}],"actualHours":17,"updatedAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-sara/jobs/k1103","data":{"acceptedAt":"2026-10-18T09:00:00.000Z","startedAt":"2026-10-19T05:30:00.000Z","stages":{"rough":{"doneAt":"2026-10-22T12:00:00.000Z","link":"https://f.io/agencyx-1103-rough"},"fine":{"doneAt":"2026-10-24T12:00:00.000Z","link":"https://f.io/agencyx-1103-fine"},"master":{"doneAt":"2026-10-25T12:00:00.000Z","link":"https://f.io/agencyx-1103-master"}},"submissions":[{"at":"2026-10-24T09:00:00.000Z","link":"https://f.io/agencyx-1103-v1","note":"Fine cut for internal"},{"at":"2026-10-25T09:00:00.000Z","link":"https://f.io/agencyx-1103-v2","note":"Final"}],"actualHours":17,"updatedAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-lina/jobs/k1104","data":{"acceptedAt":"2026-09-14T10:00:00.000Z","startedAt":"2026-09-15T05:30:00.000Z","stages":{"rough":{"doneAt":"2026-09-19T12:00:00.000Z","link":"https://f.io/agencyx-1104-rough"},"master":{"doneAt":"2026-09-23T12:00:00.000Z","link":"https://f.io/agencyx-1104-master"}},"submissions":[{"at":"2026-09-23T09:00:00.000Z","link":"https://f.io/agencyx-1104-v1","note":"Final sting + 3 loops"}],"actualHours":16,"updatedAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-lina/jobs/k1105","data":{"acceptedAt":"2026-10-04T12:00:00.000Z","startedAt":"2026-10-05T05:30:00.000Z","stages":{"rough":{"doneAt":"2026-10-10T12:00:00.000Z","link":"https://f.io/agencyx-1105-rough"},"fine":{"doneAt":"2026-10-13T12:00:00.000Z","link":"https://f.io/agencyx-1105-fine"},"master":{"doneAt":"2026-10-16T12:00:00.000Z","link":"https://f.io/agencyx-1105-master"}},"submissions":[{"at":"2026-10-14T09:00:00.000Z","link":"https://f.io/agencyx-1105-v1","note":"Fine cut"},{"at":"2026-10-16T09:00:00.000Z","link":"https://f.io/agencyx-1105-v2","note":"After CD notes"},{"at":"2026-10-17T09:00:00.000Z","link":"https://f.io/agencyx-1105-v3","note":"After client notes"}],"actualHours":38,"updatedAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-lina/jobs/k1106","data":{"acceptedAt":"2026-10-27T08:00:00.000Z","startedAt":"2026-10-28T05:30:00.000Z","stages":{"master":{"doneAt":"2026-11-01T12:00:00.000Z","link":"https://f.io/agencyx-1106-master"}},"submissions":[{"at":"2026-11-01T09:00:00.000Z","link":"https://f.io/agencyx-1106-v1","note":"All 12"}],"actualHours":9,"updatedAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-omar/jobs/k1107","data":{"acceptedAt":"2026-09-19T17:00:00.000Z","startedAt":"2026-09-20T05:30:00.000Z","stages":{"prep":{"doneAt":"2026-09-23T12:00:00.000Z","link":""},"shoot":{"doneAt":"2026-09-24T12:00:00.000Z","link":""}},"submissions":[{"at":"2026-09-26T09:00:00.000Z","link":"https://f.io/agencyx-1107-v1","note":"Rushes uploaded"}],"actualHours":26,"updatedAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-omar/jobs/k1108","data":{"acceptedAt":"2026-10-10T03:00:00.000Z","startedAt":"2026-10-10T05:30:00.000Z","stages":{"prep":{"doneAt":"2026-10-12T12:00:00.000Z","link":"https://f.io/agencyx-1108-prep"},"shoot":{"doneAt":"2026-10-15T12:00:00.000Z","link":"https://f.io/agencyx-1108-shoot"}},"submissions":[{"at":"2026-10-16T09:00:00.000Z","link":"https://f.io/agencyx-1108-v1","note":"Selects"}],"actualHours":17,"updatedAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-karim/jobs/k1109","data":{"acceptedAt":"2026-09-24T07:24:00.000Z","startedAt":"2026-09-25T05:30:00.000Z","stages":{"rough":{"doneAt":"2026-09-27T12:00:00.000Z","link":"https://f.io/agencyx-1109-rough"},"master":{"doneAt":"2026-09-29T12:00:00.000Z","link":"https://f.io/agencyx-1109-master"}},"submissions":[{"at":"2026-09-29T09:00:00.000Z","link":"https://f.io/agencyx-1109-v1","note":"Mixes + stems"}],"actualHours":7,"updatedAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-karim/jobs/k1110","data":{"acceptedAt":"2026-10-14T07:48:00.000Z","startedAt":"2026-10-15T05:30:00.000Z","stages":{"rough":{"doneAt":"2026-10-17T12:00:00.000Z","link":"https://f.io/agencyx-1110-rough"},"master":{"doneAt":"2026-10-19T12:00:00.000Z","link":"https://f.io/agencyx-1110-master"}},"submissions":[{"at":"2026-10-19T09:00:00.000Z","link":"https://f.io/agencyx-1110-v1","note":"Three options"}],"actualHours":10,"updatedAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-youssef/jobs/k1111","data":{"acceptedAt":"2026-10-11T08:00:00.000Z","startedAt":"2026-10-12T05:30:00.000Z","stages":{"shoot":{"doneAt":"2026-10-14T12:00:00.000Z","link":"https://f.io/agencyx-1111-shoot"},"rough":{"doneAt":"2026-10-16T12:00:00.000Z","link":"https://f.io/agencyx-1111-rough"},"master":{"doneAt":"2026-10-18T12:00:00.000Z","link":"https://f.io/agencyx-1111-master"}},"submissions":[{"at":"2026-10-17T09:00:00.000Z","link":"https://f.io/agencyx-1111-v1","note":"V1"},{"at":"2026-10-18T09:00:00.000Z","link":"https://f.io/agencyx-1111-v2","note":"Final"}],"actualHours":19,"updatedAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-youssef/jobs/k1112","data":{"acceptedAt":"2026-10-25T09:30:00.000Z","startedAt":"2026-10-26T05:30:00.000Z","stages":{"shoot":{"doneAt":"2026-10-28T12:00:00.000Z","link":"https://f.io/agencyx-1112-shoot"},"master":{"doneAt":"2026-10-31T12:00:00.000Z","link":"https://f.io/agencyx-1112-master"}},"submissions":[{"at":"2026-10-31T09:00:00.000Z","link":"https://f.io/agencyx-1112-v1","note":"All eight loops"}],"actualHours":11,"updatedAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-nour/jobs/k1113","data":{"acceptedAt":"2026-10-06T13:00:00.000Z","startedAt":"2026-10-07T05:30:00.000Z","stages":{"prep":{"doneAt":"2026-10-13T12:00:00.000Z","link":"https://f.io/agencyx-1113-prep"}},"submissions":[{"at":"2026-10-13T09:00:00.000Z","link":"https://f.io/agencyx-1113-v1","note":"Permit + call sheet"}],"actualHours":12,"updatedAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-sara/jobs/k1114","data":{"acceptedAt":"2026-11-02T07:30:00.000Z","startedAt":"2026-11-03T05:30:00.000Z","stages":{"rough":{"doneAt":"2026-11-07T12:00:00.000Z","link":"https://f.io/agencyx-1114-rough"}},"submissions":[{"at":"2026-11-08T09:00:00.000Z","link":"https://f.io/agencyx-1114-v1","note":"Fine cut v1 for review"}],"updatedAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-lina/jobs/k1115","data":{"acceptedAt":"2026-11-05T08:00:00.000Z","startedAt":"2026-11-06T05:30:00.000Z","stages":{"rough":{"doneAt":"2026-11-09T12:00:00.000Z","link":"https://f.io/agencyx-1115-rough"}},"updatedAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-omar/jobs/k1116","data":{"acceptedAt":"2026-11-07T13:00:00.000Z","updatedAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-youssef/jobs/k1118","data":{"acceptedAt":"2026-10-31T08:30:00.000Z","startedAt":"2026-11-01T05:30:00.000Z","stages":{"shoot":{"doneAt":"2026-11-05T12:00:00.000Z","link":"https://f.io/agencyx-1118-shoot"},"rough":{"doneAt":"2026-11-07T12:00:00.000Z","link":"https://f.io/agencyx-1118-rough"}},"submissions":[{"at":"2026-11-07T09:00:00.000Z","link":"https://f.io/agencyx-1118-v1","note":"First 10 for review"}],"actualHours":20,"updatedAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-nour/jobs/k1119","data":{"acceptedAt":"2026-11-04T09:00:00.000Z","startedAt":"2026-11-05T05:30:00.000Z","blocked":true,"blockedNote":"Waiting for client approval on the talent shortlist","updatedAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-lina/jobs/k1121","data":{"acceptedAt":"2026-11-03T11:00:00.000Z","startedAt":"2026-11-04T05:30:00.000Z","updatedAt":"2026-11-09T05:00:00.000Z","sample":true}},{"path":"work/p-rana/comments/c1","data":{"jobId":"k1114","text":"Strong cut. The first 10 seconds need a cleaner hook, try opening on the flag shot.","at":"2026-11-08T12:00:00.000Z","author":"rana","sample":true}},{"path":"work/p-sara/comments/c2","data":{"jobId":"k1114","text":"On it. New opening in the next version tonight.","at":"2026-11-08T13:00:00.000Z","author":"sara","sample":true}},{"path":"work/p-nour/comments/c3","data":{"jobId":"k1119","text":"Shortlist sent to the client Sunday. Following up today.","at":"2026-11-07T07:00:00.000Z","author":"nour","sample":true}},{"path":"work/p-hadi/comments/c4","data":{"jobId":"k1119","text":"Client says Tuesday. I moved the hold on Studio X to 16 Nov.","at":"2026-11-08T06:00:00.000Z","author":"hadi","sample":true}},{"path":"work/p-youssef/comments/c5","data":{"jobId":"k1118","text":"Fixing the hands with inpainting, packaging text redone in Photoshop.","at":"2026-11-08T14:00:00.000Z","author":"youssef","sample":true}},{"path":"work/p-mostafa/comments/c6","data":{"jobId":"k1116","text":"Omar, please confirm you have the brief and the kit list.","at":"2026-11-08T08:00:00.000Z","author":"mostafa","sample":true}},{"path":"equipment/AI-WS-01","data":{"category":"AI workstation","checkout":"","code":"AI-WS-01","holder":"","item":"AI generation workstation","jobId":"","lastService":"2026-10-25","notes":"","sample":true,"serial":"","status":"Available"}},{"path":"equipment/AUD-ST-01","data":{"category":"AUD audio","checkout":"","code":"AUD-ST-01","holder":"","item":"Sound suite: mixer + monitors","jobId":"","lastService":"2026-08-30","notes":"","sample":true,"serial":"","status":"Available"}},{"path":"equipment/CAM-FX3-01","data":{"category":"CAM camera","checkout":"2026-11-09","code":"CAM-FX3-01","holder":"Omar K.","item":"Sony FX3 body","jobId":"AX-1116","lastService":"2026-09-15","notes":"","sample":true,"serial":"","status":"Checked out"}},{"path":"equipment/CAM-FX3-02","data":{"category":"CAM camera","checkout":"","code":"CAM-FX3-02","holder":"","item":"Sony FX3 body","jobId":"","lastService":"2026-10-01","notes":"","sample":true,"serial":"","status":"Available"}},{"path":"equipment/EDT-MP-01","data":{"category":"EDT edit suite","checkout":"2026-11-05","code":"EDT-MP-01","holder":"Lina H.","item":"Motion workstation 1","jobId":"AX-1115","lastService":"2026-10-10","notes":"","sample":true,"serial":"","status":"Checked out"}},{"path":"equipment/EDT-WS-02","data":{"category":"EDT edit suite","checkout":"2026-11-06","code":"EDT-WS-02","holder":"Sara M.","item":"Edit workstation 2","jobId":"AX-1114","lastService":"2026-10-10","notes":"","sample":true,"serial":"","status":"Checked out"}},{"path":"equipment/LGT-AP3-02","data":{"category":"LGT lighting","checkout":"2026-11-09","code":"LGT-AP3-02","holder":"Omar K.","item":"300W LED with softbox","jobId":"AX-1116","lastService":"2026-07-01","notes":"Fan noise reported","sample":true,"serial":"","status":"Checked out"}},{"path":"equipment/LNS-2470-01","data":{"category":"LNS lens","checkout":"2026-11-09","code":"LNS-2470-01","holder":"Omar K.","item":"24-70mm f/2.8 zoom","jobId":"AX-1116","lastService":"2026-09-15","notes":"","sample":true,"serial":"","status":"Checked out"}},{"path":"equipment/MON-SH7-01","data":{"category":"MON monitoring","checkout":"","code":"MON-SH7-01","holder":"","item":"7-inch field monitor","jobId":"","lastService":"2026-10-20","notes":"","sample":true,"serial":"","status":"Available"}},{"path":"equipment/STO-SSD-04","data":{"category":"STO storage","checkout":"","code":"STO-SSD-04","holder":"","item":"2TB portable SSD","jobId":"","lastService":"2026-11-03","notes":"Read errors, sent for check","sample":true,"serial":"","status":"In service"}},{"path":"vendors/casting-b","data":{"category":"Casting / model agency","contact":"","jobs":5,"lastJob":"","name":"Casting agency B","notes":"Arabic-speaking talent pool","phone":"","sample":true,"scores":{"budget":4,"comms":3,"onTime":4,"quality":3}}},{"path":"vendors/dop-riyadh","data":{"category":"Director / DOP","contact":"","jobs":4,"lastJob":"","name":"Freelance DOP, Riyadh","notes":"","phone":"","sample":true,"scores":{"budget":5,"comms":5,"onTime":4,"quality":4}}},{"path":"vendors/prod-house-a","data":{"category":"Production house","contact":"","jobs":2,"lastJob":"","name":"Production house A","notes":"Strong on automotive","phone":"","sample":true,"scores":{"budget":3,"comms":4,"onTime":4,"quality":5}}},{"path":"vendors/rental-c","data":{"category":"Equipment rental","contact":"","jobs":6,"lastJob":"","name":"Rental house C","notes":"Same-day delivery in Dubai","phone":"","sample":true,"scores":{"budget":4,"comms":4,"onTime":5,"quality":4}}},{"path":"vendors/studio-x","data":{"category":"Studio / location","contact":"","jobs":3,"lastJob":"AX-1139","name":"Studio X","notes":"Cyc wall, 2 sets","phone":"","sample":true,"scores":{"budget":4,"comms":3,"onTime":5,"quality":4}}},{"path":"vendors/travel-d","data":{"category":"Travel & logistics","contact":"","jobs":2,"lastJob":"AX-1140","name":"Travel agency D","notes":"KSA visas","phone":"","sample":true,"scores":{"budget":4,"comms":4,"onTime":3,"quality":4}}}];
+  const base = new Date(2026,10,9), now = new Date(); now.setHours(0,0,0,0);
+  const shift = Math.round((now - base)/864e5);
+  const mv = v => { if (typeof v === "string") {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) { const [y,m,d] = v.split("-").map(Number); const x = new Date(y,m-1,d+shift); return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`; }
+      if (/^\d{4}-\d{2}-\d{2}T/.test(v)) return new Date(+new Date(v) + shift*864e5).toISOString(); return v; }
+    if (Array.isArray(v)) return v.map(mv); if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,mv(x)])); return v; };
+  const store = new Map(SEED.map(x=>[x.path, mv(x.data)]));
+  const subs = [];
+  const snap = c => { const docs = [...store.entries()].filter(([p])=>p.startsWith(c+"/") && !p.slice(c.length+1).includes("/")).map(([p,d])=>({id:p.split("/").pop(), data:()=>JSON.parse(JSON.stringify(d))})); return {docs, size:docs.length, metadata:{fromCache:false}}; };
+  const notify = () => subs.forEach(s=>s.fn(snap(s.c)));
+  const doc = p => ({ id:p.split("/").pop(),
+    set: async d => { store.set(p, JSON.parse(JSON.stringify(d))); notify(); },
+    update: async d => { store.set(p, {...(store.get(p)||{}), ...JSON.parse(JSON.stringify(d))}); notify(); },
+    delete: async () => { store.delete(p); notify(); } });
+  const db = { doc, collection: c => ({ doc: id => doc(c+"/"+(id||Math.random().toString(36).slice(2,12))), onSnapshot: fn => { const s = {c,fn}; subs.push(s); setTimeout(()=>fn(snap(c)),0); return ()=>{ const i = subs.indexOf(s); if (i>=0) subs.splice(i,1); }; } }) };
+  const user = { id: async()=>"u-admin", canEdit: async()=>true, isOwner: async()=>true, can: async()=>true, profiles: async ids => Object.fromEntries(ids.map(i=>[i,{id:i,name:"",avatarUrl:""}])), search: async()=>[] };
+  return { use: async n => n==="db" ? db : n==="user" ? user : n==="downloads" ? { save: async ({filename, data}) => { const a = document.createElement("a"); a.href = URL.createObjectURL(data); a.download = filename; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); } } : null };
+})();
+
+/* ================= reference ================= */
+const ADMIN_ROLES = ["Video Production Manager","Creative Director","Traffic Manager"];
+const ROLES = [...ADMIN_ROLES,"Editor","Motion Designer","Videographer / DOP","Sound Designer","AI Producer","Production Coordinator","Colourist","Freelancer"];
+const STATUSES = [
+  {k:"Unassigned",c:"s-ns",v:"--ns-fg"},{k:"Assigned",c:"s-as",v:"--as-fg"},{k:"Accepted",c:"s-ac",v:"--ac-fg"},{k:"In progress",c:"s-ip",v:"--ip-fg"},
+  {k:"In review",c:"s-ir",v:"--ir-fg"},{k:"Revisions",c:"s-rv",v:"--rv-fg"},{k:"Blocked",c:"s-bl",v:"--bl-fg"},{k:"Done",c:"s-dn",v:"--dn-fg"}];
+const SC = Object.fromEntries(STATUSES.map(s=>[s.k,s]));
+const OPEN = s => s !== "Done";
+const PRIOS = ["P1 Urgent","P2 High","P3 Normal"];
+const STAGES = [["prep","Prep & assets"],["shoot","Shoot / generation"],["rough","Rough cut"],["fine","Fine cut"],["master","Final master"]];
+const STAGE_L = Object.fromEntries(STAGES);
+const CRAFTS = ["Production","Camera & lighting","Editing","Motion graphics","Sound & music","AI production","Creative","Traffic","External"];
+const SKILLS = [["edit","Story edit"],["color","Colour grade"],["motion","Motion / 3D"],["camera","Camera & light"],["sound","Sound"],["ai","AI tools"],["arabic","Arabic supers"]];
+const EQ_STATUS = ["Available","Checked out","In service","Retired"];
+const EQ_SC = {"Available":"s-dn","Checked out":"s-ip","In service":"s-ir","Retired":"s-ns"};
+const EQ_CATS = ["CAM camera","LNS lens","LGT lighting","AUD audio","GRP grip","MON monitoring","STO storage","EDT edit suite","AI workstation"];
+const V_CATS = ["Production house","Director / DOP","Editor / colourist","Motion / 3D studio","Studio / location","Casting / model agency","Equipment rental","Travel & logistics","Music & sound"];
+const V_CRIT = [["quality","Quality"],["onTime","On time"],["budget","Budget"],["comms","Communication"]];
+const W = [["onTime","Delivered on time",30],["stages","Stages on schedule",15],["internal","Internal revisions",15],["client","Client revisions",15],["accept","Acceptance speed",15],["efficiency","Hours vs estimate",10]];
+
+/* ================= state ================= */
+const S = { team:[], jobs:[], equipment:[], vendors:[], claims:[], work:{}, comments:{}, loaded:{}, subs:{},
+  db:null, user:null, dl:null, uid:null, isAdmin:false, canWrite:false, offline:false,
+  previewId:null, view:"overview", param:null, jobsMode:"table", f:{q:"",status:"open",member:"all",prio:"all"}, sort:{k:"deadline",d:1},
+  period:90, eqf:{q:"",status:"all"}, drawer:null, profiles:{} };
+
+/* ================= utils ================= */
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad = n => String(n).padStart(2,"0");
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse = s => { if(!s) return null; const [y,m,d] = String(s).slice(0,10).split("-").map(Number); return y ? new Date(y,m-1,d) : null; };
+const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+const addDays = (d,n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+const diff = (a,b) => Math.round((a-b)/864e5);
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"], DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const fmt = s => { const d = parse(s); return d ? `${d.getDate()} ${MON[d.getMonth()]}` : "–"; };
+const isoDay = iso => iso ? ymd(new Date(iso)) : null;
+const ago = iso => { if(!iso) return ""; const m = Math.round((Date.now()-new Date(iso))/6e4); if (m<1) return "just now"; if (m<60) return `${m} min ago`; const h = Math.round(m/60); if (h<24) return `${h}h ago`; const d = Math.round(h/24); return d<8 ? `${d}d ago` : fmt(isoDay(iso)); };
+const num = v => (v===""||v==null||isNaN(+v)) ? null : +v;
+const last = a => Array.isArray(a) && a.length ? a[a.length-1] : null;
+const initials = n => String(n||"?").split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();
+const nowIso = () => new Date().toISOString();
+const uidish = () => Math.random().toString(36).slice(2,10)+Date.now().toString(36);
+function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("show"); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove("show"),2400); }
+const ICON_SEARCH = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5.2" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+const CHECK = `<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6.5l2.5 2.5L10 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+/* ================= model ================= */
+const tById = id => S.team.find(t=>t.id===id);
+const keyOf = t => t ? (t.uid || "p-"+t.id) : null;
+const isAdminRole = t => !!t && ADMIN_ROLES.includes(t.role);
+const workOf = j => { const t = tById(j.assignee); return (t && S.work[keyOf(t)]?.[j.id]) || {}; };
+function status(j){
+  if (j.approvedAt) return "Done";
+  if (!j.assignee) return "Unassigned";
+  const w = workOf(j); if (w.blocked) return "Blocked";
+  const ls = last(w.submissions)?.at, lr = last(j.reviews)?.at;
+  if (ls && (!lr || ls > lr)) return "In review";
+  if (lr) return "Revisions";
+  if (w.startedAt || Object.values(w.stages||{}).some(s=>s?.doneAt)) return "In progress";
+  if (w.acceptedAt) return "Accepted";
+  return "Assigned";
+}
+const daysLeft = j => (!OPEN(status(j)) || !j.deadline) ? null : diff(parse(j.deadline), today());
+const stagesOf = j => (j.stages||[]).filter(s=>STAGE_L[s.k]);
+const stagesDone = j => { const w = workOf(j); return stagesOf(j).filter(s=>w.stages?.[s.k]?.doneAt).length; };
+const nextService = e => e.lastService ? ymd(addDays(parse(e.lastService),90)) : null;
+const serviceState = e => { const n = nextService(e); if(!n) return null; const d = diff(parse(n),today()); return d<0?"Overdue":d<=14?"Soon":"OK"; };
+const vAvg = v => { const xs = V_CRIT.map(([k])=>num(v.scores?.[k])).filter(x=>x); return xs.length ? xs.reduce((a,b)=>a+b,0)/xs.length : null; };
+function memberLoad(t){ const js = S.jobs.filter(j=>j.assignee===t.id && OPEN(status(j))); return {jobs:js, hours:js.reduce((a,j)=>a+(num(j.estHours)||0),0)}; }
+function nextJobId(){ const n = S.jobs.map(j=>+(String(j.jobId||"").match(/(\d+)$/)||[])[1]).filter(Boolean); return "AX-"+String((n.length?Math.max(...n):1100)+1).padStart(4,"0"); }
+const commentsFor = j => Object.values(S.comments).flat().filter(c=>c.jobId===j.id).sort((a,b)=>String(a.at).localeCompare(String(b.at)));
+
+/* who am I, and who am I acting as */
+const me = () => S.uid ? S.team.find(t=>t.uid===S.uid) : null;
+const actor = () => (S.isAdmin && S.previewId) ? tById(S.previewId) : me();
+const adminMode = () => S.isAdmin && !S.previewId;
+const canActOn = j => { const a = actor(); return !!a && a.id === j.assignee && (S.isAdmin || a.uid === S.uid); };
+
+/* ================= performance ================= */
+function perf(t, days){
+  const since = days ? Date.now() - days*864e5 : 0;
+  const mine = S.jobs.filter(j=>j.assignee===t.id);
+  const done = mine.filter(j=>j.approvedAt && +new Date(j.approvedAt) >= since);
+  const C = {};
+  // on time: last submission before approval vs deadline
+  const ot = done.filter(j=>j.deadline).map(j=>{ const subs = workOf(j).submissions||[]; const final = last(subs)?.at || j.approvedAt; return isoDay(final) <= j.deadline; });
+  if (ot.length) C.onTime = {v: ot.filter(Boolean).length/ot.length*100, label:`${ot.filter(Boolean).length} of ${ot.length} jobs`};
+  // stages
+  let sn=0, sd=0; const td = ymd(today());
+  mine.forEach(j=>{ const w = workOf(j); stagesOf(j).forEach(s=>{ if(!s.due) return; const dueMs = +parse(s.due); if (dueMs < since) return;
+    const dn = w.stages?.[s.k]?.doneAt; if (dn) { sd++; if (isoDay(dn) <= s.due) sn++; } else if (s.due < td && OPEN(status(j))) { sd++; } }); });
+  if (sd) C.stages = {v: sn/sd*100, label:`${sn} of ${sd} stages`};
+  if (done.length){
+    const ir = done.reduce((a,j)=>a+(j.reviews||[]).filter(r=>r.type==="internal").length,0)/done.length;
+    const cr = done.reduce((a,j)=>a+(j.reviews||[]).filter(r=>r.type==="client").length,0)/done.length;
+    C.internal = {v: Math.max(0,100-25*ir), label:`${ir.toFixed(1)} per job`, raw:ir};
+    C.client = {v: Math.max(0,100-30*cr), label:`${cr.toFixed(1)} per job`, raw:cr};
+  }
+  const acc = mine.filter(j=>j.assignedAt && +new Date(j.assignedAt) >= since).map(j=>{ const w = workOf(j); const end = w.acceptedAt ? +new Date(w.acceptedAt) : (j.approvedAt?null:Date.now()); return end==null?null:Math.max(0,(end-new Date(j.assignedAt))/36e5); }).filter(x=>x!=null);
+  if (acc.length){ const h = acc.reduce((a,b)=>a+b,0)/acc.length; C.accept = {v: h<=4?100:h>=48?0:100-(h-4)/44*100, label: h<1?`${Math.round(h*60)} min avg`:`${h.toFixed(1)}h avg`, raw:h}; }
+  const eff = done.map(j=>({e:num(j.estHours), a:num(workOf(j).actualHours)})).filter(x=>x.e&&x.a);
+  if (eff.length){ const e = eff.reduce((a,x)=>a+x.e,0), a = eff.reduce((s,x)=>s+x.a,0); C.efficiency = {v: Math.min(100,e/a*100), label:`${a}h used of ${e}h`}; }
+  let tw=0, ts=0; W.forEach(([k,,w])=>{ if (C[k]) { tw+=w; ts+=C[k].v*w; } });
+  const score = tw ? Math.round(ts/tw) : null;
+  return {score, grade:grade(score), C, done:done.length, active:mine.filter(j=>OPEN(status(j))).length};
+}
+function grade(s){ if (s==null) return {c:"g-na",l:"Not enough data"}; if (s>=85) return {c:"g-ex",l:"Excellent"}; if (s>=70) return {c:"g-st",l:"Strong"}; if (s>=55) return {c:"g-ns",l:"Needs support"}; return {c:"g-ar",l:"At risk"}; }
+
+/* ================= small renderers ================= */
+const chip = s => `<span class="chip ${SC[s]?.c||"s-ns"}">${esc(s)}</span>`;
+const prio = p => p ? `<span class="prio ${p.startsWith("P1")?"p1":""}">${esc(p.split(" ")[0])}</span>` : "";
+const roleTag = t => t ? `<span class="role-tag ${isAdminRole(t)?"admin":""}">${esc(t.role||"Member")}</span>` : "";
+function avatar(t, cls="avatar"){ const p = t?.uid && S.profiles[t.uid]; if (p?.avatarUrl && p.name) return `<img class="${cls==="avatar"?"av":cls}" src="${esc(p.avatarUrl)}" alt="" style="border-radius:50%">`; return `<span class="avatar">${esc(initials(t?.name))}</span>`; }
+function daysCell(j){ const d = daysLeft(j); if (d==null) return `<span class="days">–</span>`; const c = d<0?"late":d<=2?"soon":""; return `<span class="days ${c}">${d<0?`${-d}d late`:d===0?"Today":`${d}d`}</span>`; }
+function progress(j){ const st = stagesOf(j); if(!st.length) return ""; const w = workOf(j); return `<span class="progress" aria-label="${stagesDone(j)} of ${st.length} stages done">${st.map(s=>`<i class="${w.stages?.[s.k]?.doneAt?"on":""}"></i>`).join("")}</span>`; }
+function head(n,label,title,sub,actions=""){ return `<div class="view-head"><div><div class="eyebrow"><b>${n}</b><span>/</span><span>${label}</span></div><h1>${title}</h1>${sub?`<p class="sub">${sub}</p>`:""}</div><div class="actions">${actions}</div></div>`; }
+function scoreBar(p){ const s = p.score; return `<div class="scorebar"><b>${s??"–"}</b><div class="track"><div class="fill" style="width:${s??0}%;background:${s==null?"var(--line)":s>=70?"var(--ink)":s>=55?"var(--warn)":"var(--bad)"}"></div></div><span class="grade ${p.grade.c}">${p.grade.l}</span></div>`; }
+function sampleNotice(){
+  if (![...S.jobs,...S.team].some(x=>x.sample)) return "";
+  return `<div class="notice"><span><strong>Interactive demo.</strong> Sample people and jobs. Try anything: use “View as” to switch between admin and team member. Nothing is saved; reload to reset.</span>${adminMode()?`<button class="btn sm" type="button" data-act="clearSamples">Clear sample data</button>`:""}</div>`;
+}
+function guard(coll, html){
+  if (S.offline) return `<div class="emptystate"><h2>The shared tracker isn't connected in this view</h2><p>Open this page in Claude while signed in to load the live production data.</p></div>`;
+  if (!S.loaded[coll]) return `<div class="panel">${'<div class="skel"></div>'.repeat(5)}</div>`;
+  return html;
+}
+
+/* ================= header ================= */
+function renderChrome(){
+  const a = actor(), m = me();
+  const views = adminMode()
+    ? [["overview","Overview"],["jobs","Jobs"],...(m?[["my","My tasks"]]:[]),["schedule","Schedule"],["team","Team"],["performance","Performance"],["equipment","Equipment"],["vendors","Vendors"]]
+    : [["my","My tasks"],["jobs","All jobs"],["schedule","Schedule"],["team","Team"],["performance","My score"],["equipment","Equipment"]];
+  S.allowed = views.map(v=>v[0]).concat(["person"]);
+  const waiting = a ? S.jobs.filter(j=>j.assignee===a.id && status(j)==="Assigned").length : 0;
+  const reviewN = adminMode() ? S.jobs.filter(j=>status(j)==="In review").length : 0;
+  $("#tabs").innerHTML = views.map(([k,l])=>`<a href="#${k}" data-view="${k}" aria-current="${S.view===k||(S.view==="person"&&k==="team")?"page":"false"}">${l}${k==="my"&&waiting?`<span class="badge">${waiting}</span>`:""}${k==="jobs"&&reviewN?`<span class="badge" title="Waiting for review">${reviewN}</span>`:""}</a>`).join("");
+  let ac = "";
+  if (S.isAdmin && S.team.length) {
+    ac = `<span class="lbl">View as</span><select id="viewAs" aria-label="View the desk as">${`<option value="">${esc(m?m.name+" (admin)":"Admin")}</option>`}${S.team.filter(t=>!m||t.id!==m.id).map(t=>`<option value="${esc(t.id)}" ${S.previewId===t.id?"selected":""}>${esc(t.name)} · ${esc(t.role)}</option>`).join("")}</select>`;
+  } else if (m) ac = `<span class="me-pill">${avatar(m)}<span>${esc(m.name)}</span>${roleTag(m)}</span>`;
+  $("#actor").innerHTML = ac;
+  const pv = S.isAdmin && S.previewId && tById(S.previewId);
+  $("#previewBand").hidden = !pv;
+  if (pv) $("#previewText").textContent = `Preview: you are seeing the desk as ${pv.name} (${pv.role}). Actions you take here are recorded for ${pv.name}.`;
+}
+
+/* ================= views ================= */
+const VIEWS = {overview:renderOverview, my:renderMy, jobs:renderJobs, schedule:renderSchedule, team:renderTeam, person:renderPerson, performance:renderPerformance, equipment:renderEquipment, vendors:renderVendors};
+
+function linkCallout(){
+  if (S.offline || !S.loaded.team || me() || !S.uid) return "";
+  const claimed = S.claims.find(c=>c.id===S.uid);
+  if (S.isAdmin) return `<div class="callout"><h2>Which profile is you?</h2><p class="sub" style="margin:0">Link your Claude account to your team profile so your comments, approvals and tasks carry your name.</p>
+    <div class="inline-form"><select class="f" id="selfLink" aria-label="Your profile">${S.team.filter(t=>!t.uid).map(t=>`<option value="${esc(t.id)}">${esc(t.name)} · ${esc(t.role)}</option>`).join("")}</select><button class="btn primary" type="button" data-act="linkSelf">This is me</button></div></div>`;
+  if (claimed) return `<div class="callout"><h2>Waiting for an admin to confirm your profile</h2><p class="sub" style="margin:0">You asked to be linked to ${esc(tById(claimed.claim)?.name||"a profile")}. A producer, creative director or traffic manager confirms it from the Team page.</p></div>`;
+  return `<div class="callout"><h2>Find your profile</h2><p class="sub" style="margin:0">Pick your name so the desk can show your tasks. An admin confirms it once.</p>
+    <div class="inline-form"><select class="f" id="claimSel" aria-label="Your profile">${S.team.filter(t=>!t.uid&&!isAdminRole(t)).map(t=>`<option value="${esc(t.id)}">${esc(t.name)} · ${esc(t.role)}</option>`).join("")}</select><button class="btn primary" type="button" data-act="claim">Request link</button></div></div>`;
+}
+
+function renderOverview(){
+  if (!adminMode()) return renderMy();
+  const t = today(), all = S.jobs.map(j=>({j,s:status(j)})), open = all.filter(x=>OPEN(x.s));
+  const due7 = open.filter(x=>{ const d = daysLeft(x.j); return d!=null && d>=0 && d<=7; });
+  const late = open.filter(x=>(daysLeft(x.j)??0)<0), blocked = all.filter(x=>x.s==="Blocked"), review = all.filter(x=>x.s==="In review");
+  const waiting = all.filter(x=>x.s==="Assigned" && x.j.assignedAt && (Date.now()-new Date(x.j.assignedAt))/36e5 > 24);
+  const team = S.team.filter(m=>!isAdminRole(m)), scores = team.map(m=>perf(m,S.period).score).filter(x=>x!=null);
+  const avgScore = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : "–";
+  const stat = (k,v,t,al) => `<div class="stat ${al?"alert":""}"><div class="k">${k}</div><div class="v">${v}</div><div class="t">${t}</div></div>`;
+  const counts = STATUSES.map(s=>({...s,n:all.filter(x=>x.s===s.k).length})), total = all.length||1;
+  const att = [
+    ...late.map(x=>({f:"bad",l:"Overdue",j:x.j,why:`${-daysLeft(x.j)}d past ${fmt(x.j.deadline)}`})),
+    ...blocked.map(x=>({f:"bad",l:"Blocked",j:x.j,why:workOf(x.j).blockedNote||"Flagged by the team member"})),
+    ...review.map(x=>({f:"warn",l:"Review",j:x.j,why:`Submitted ${ago(last(workOf(x.j).submissions)?.at)}`})),
+    ...waiting.map(x=>({f:"info",l:"Not accepted",j:x.j,why:`Assigned ${ago(x.j.assignedAt)}`})),
+    ...all.filter(x=>x.s==="Unassigned").map(x=>({f:"info",l:"Unassigned",j:x.j,why:"Needs an owner"}))];
+  const eqA = S.equipment.filter(e=>e.status!=="Retired" && serviceState(e)==="Overdue");
+  return head("01","Overview","This week on the desk",`${DOW[t.getDay()]} ${t.getDate()} ${MON[t.getMonth()]} ${t.getFullYear()}. Updates arrive live as the team accepts, delivers and comments.`,`<button class="btn primary" type="button" data-act="newJob">Assign a job</button>`)
+  + linkCallout() + sampleNotice()
+  + guard("jobs", `<section class="strip" aria-label="Key numbers">
+    ${stat("Active jobs",open.length,`${all.length} on the board`)}${stat("Due in 7 days",due7.length,"Not yet delivered")}
+    ${stat("Overdue",late.length,late.length?"Needs action now":"All on schedule",late.length>0)}${stat("To review",review.length,review.length?"Submitted, waiting for you":"Nothing waiting",false)}
+    ${stat("Blocked",blocked.length,blocked.length?"Waiting on a decision":"Nothing stuck",blocked.length>0)}${stat("Team score",avgScore,`Last ${S.period} days`)}</section>
+  <div class="grid2"><div class="stack">
+    <section class="panel"><div class="panel-head"><h2>Needs attention</h2><span class="hint">${att.length+eqA.length} item${att.length+eqA.length===1?"":"s"}</span></div>
+      <ul class="alist">${att.length+eqA.length===0?`<li class="empty-line" style="display:block">Nothing needs attention right now.</li>`:""}
+      ${att.map(a=>`<li data-act="openJob" data-id="${a.j.id}" style="cursor:pointer"><span class="flag ${a.f}">${a.l}</span><div class="what"><div>${esc(a.j.task)}</div><small><span class="mono">${esc(a.j.jobId)}</span> · ${esc(tById(a.j.assignee)?.name||"No owner")} · ${esc(a.why)}</small></div>${chip(status(a.j))}</li>`).join("")}
+      ${eqA.map(e=>`<li data-act="openEq" data-id="${e.id}" style="cursor:pointer"><span class="flag info">Service</span><div class="what"><div>${esc(e.item)}</div><small>service was due ${fmt(nextService(e))}</small></div><span class="code">${esc(e.code)}</span></li>`).join("")}</ul></section>
+  </div><div class="stack">
+    <section class="panel"><div class="panel-head"><h2>Jobs by status</h2><span class="hint">${all.length} total</span></div>
+      <div class="sbar" role="img" aria-label="${counts.map(c=>`${c.k} ${c.n}`).join(", ")}">${counts.filter(c=>c.n).map(c=>`<span style="width:${c.n/total*100}%;background:var(${c.v})"></span>`).join("")}</div>
+      <div class="legend">${counts.filter(c=>c.n).map(c=>`<span><i class="dot" style="background:var(${c.v})"></i>${c.k}<b>${c.n}</b></span>`).join("")}</div></section>
+    <section class="panel"><div class="panel-head"><h2>Team load</h2><span class="hint">Open hours vs weekly capacity. Band = 70–85%</span></div>
+      <div class="loads">${team.filter(m=>num(m.capacity)).map(m=>{ const L = memberLoad(m), p = L.hours/num(m.capacity)*100, o = p>85;
+        return `<div class="load"><div class="who">${esc(m.name)}<small>${esc(m.role)}</small></div><div class="track"><div class="band"></div><div class="fill ${o?"over":""}" style="width:${Math.min(p,100)}%"></div></div><div class="pct ${o?"over":""}">${Math.round(p)}%</div></div>`; }).join("") || `<p class="empty-line">Add team members to see their load.</p>`}</div></section>
+  </div></div>`);
+}
+
+function taskCard(j){
+  const s = status(j), w = workOf(j), st = stagesOf(j);
+  const btn = s==="Assigned" && canActOn(j) ? `<button class="btn sm primary" type="button" data-act="accept" data-id="${j.id}">Accept task</button>` : "";
+  return `<article class="task-card" data-act="openJob" data-id="${j.id}" tabindex="0"><div class="l"><div class="m"><span class="mono">${esc(j.jobId)}</span>${prio(j.priority)}<span>${esc(j.client)}</span></div>
+    <div class="t">${esc(j.task)}</div><div class="m"><span>Due <b class="mono" style="color:var(--fg)">${fmt(j.deadline)}</b></span>${OPEN(s)?daysCell(j):""}${st.length?`<span>·</span>${progress(j)}<span>${stagesDone(j)}/${st.length} stages</span>`:""}${(j.reviews||[]).length?`<span>· ${(j.reviews||[]).length} revision${j.reviews.length>1?"s":""}</span>`:""}</div></div>
+    <div class="r">${chip(s)}${btn}</div></article>`;
+}
+function renderMy(){
+  const a = actor();
+  if (!a) return head("01","My tasks","Your tasks","") + linkCallout() + (S.offline?guard("jobs",""):(S.loaded.team?`<div class="emptystate"><h2>Your account isn't linked to a team profile yet</h2><p>Once it is, every task assigned to you appears here.</p></div>`:guard("team","")));
+  const mine = S.jobs.filter(j=>j.assignee===a.id).map(j=>({j,s:status(j)}));
+  const by = ks => mine.filter(x=>ks.includes(x.s)).sort((x,y)=>String(x.j.deadline).localeCompare(String(y.j.deadline))).map(x=>x.j);
+  const since = Date.now()-30*864e5;
+  const groups = [["New: accept to start",by(["Assigned"])],["Needs your work",by(["Revisions","Blocked","Accepted","In progress"])],["With the reviewers",by(["In review"])],
+    ["Completed in the last 30 days", mine.filter(x=>x.s==="Done" && +new Date(x.j.approvedAt)>=since).map(x=>x.j).sort((x,y)=>String(y.approvedAt).localeCompare(String(x.approvedAt)))]];
+  const p = perf(a, S.period);
+  return head("01","My tasks",`${esc(a.name.split(" ")[0])}, here is your desk`,`Accept new tasks, mark each stage complete with its link, and submit for review. Your score updates as jobs close.`)
+  + sampleNotice()
+  + guard("jobs", `<section class="strip" aria-label="Your numbers" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+    <div class="stat"><div class="k">Your score</div><div class="v">${p.score??"–"}</div><div class="t"><span class="grade ${p.grade.c}">${p.grade.l}</span></div></div>
+    <div class="stat"><div class="k">On time</div><div class="v">${p.C.onTime?Math.round(p.C.onTime.v)+"%":"–"}</div><div class="t">${p.C.onTime?.label||"No closed jobs yet"}</div></div>
+    <div class="stat"><div class="k">Revisions</div><div class="v">${p.C.internal?(p.C.internal.raw+p.C.client.raw).toFixed(1):"–"}</div><div class="t">Per job, internal + client</div></div>
+    <div class="stat"><div class="k">Open tasks</div><div class="v">${p.active}</div><div class="t">${memberLoad(a).hours}h estimated</div></div></section>
+  <div class="groups">${groups.map(([t,js])=>`<section class="group"><h2>${t}<span class="n">${js.length}</span></h2>${js.length?`<div class="tasks">${js.map(taskCard).join("")}</div>`:`<p class="empty-line">Nothing here.</p>`}</section>`).join("")}</div>`);
+}
+
+function filteredJobs(){
+  const f = S.f, q = f.q.trim().toLowerCase();
+  const js = S.jobs.map(j=>({...j,_s:status(j),_m:tById(j.assignee)?.name||""})).filter(j =>
+    (f.status==="all" || (f.status==="open" ? OPEN(j._s) : j._s===f.status)) && (f.member==="all" || j.assignee===f.member) && (f.prio==="all" || j.priority===f.prio) &&
+    (!q || [j.jobId,j.task,j.client,j._m,j.equipment,j.vendor,j.brief,j.format].join(" ").toLowerCase().includes(q)));
+  const k = S.sort.k, d = S.sort.d;
+  const val = j => k==="days" ? (daysLeft(j)??1e9) : k==="status" ? STATUSES.findIndex(s=>s.k===j._s) : k==="priority" ? PRIOS.indexOf(j.priority) : k==="member" ? j._m.toLowerCase() : String(j[k]??"").toLowerCase()||"~";
+  return js.sort((a,b)=>{ const x=val(a), y=val(b); return (x>y?1:x<y?-1:0)*d; });
+}
+function renderJobs(){
+  const js = filteredJobs(), opt = (v,l,c) => `<option value="${esc(v)}" ${v===c?"selected":""}>${esc(l)}</option>`;
+  const th = (k,l,c="") => `<th class="${c}"><button type="button" data-act="sort" data-k="${k}">${l}${S.sort.k===k?(S.sort.d>0?" ↑":" ↓"):""}</button></th>`;
+  const table = `<div class="tbl-wrap"><table><thead><tr>${th("jobId","Job")}${th("priority","Prio")}${th("task","Task / client")}${th("member","Assigned to")}${th("deadline","Due")}${th("days","Left")}<th>Stages</th><th class="num">Rev.</th>${th("status","Status")}</tr></thead><tbody>
+    ${js.map(j=>`<tr data-act="openJob" data-id="${j.id}" tabindex="0"><td><span class="mono" style="font-weight:500">${esc(j.jobId)}</span></td><td>${prio(j.priority)}</td>
+    <td><div class="task">${esc(j.task)}</div><div class="meta">${esc(j.client)}${j.format?` · ${esc(j.format)}`:""}</div></td><td>${esc(j._m||"–")}<div class="meta">${esc(tById(j.assignee)?.role||"")}</div></td>
+    <td class="mono">${fmt(j.deadline)}</td><td>${daysCell(j)}</td><td>${progress(j)||"–"}</td><td class="num mono">${(j.reviews||[]).length||"–"}</td><td>${chip(j._s)}</td></tr>`).join("")}</tbody></table></div>`;
+  const board = `<div class="board" style="grid-template-columns:repeat(${STATUSES.length},minmax(210px,1fr))">${STATUSES.map(s=>{ const cs = js.filter(j=>j._s===s.k);
+    return `<div class="col"><div class="col-head">${chip(s.k)}<span class="n">${cs.length}</span></div>${cs.map(j=>`<article class="card" data-act="openJob" data-id="${j.id}" tabindex="0" style="cursor:pointer"><div class="row"><span class="mono" style="font-size:12px;color:var(--muted)">${esc(j.jobId)}</span>${prio(j.priority)}</div><div class="t">${esc(j.task)}</div><div class="m"><span>${esc(j._m||"Unassigned")}</span><span>·</span><span>${esc(j.client)}</span></div><div class="row"><span class="mono" style="font-size:12px">${fmt(j.deadline)}</span>${daysCell(j)}</div></article>`).join("")}</div>`; }).join("")}</div>`;
+  return head("02","Jobs",adminMode()?"Every job, owner and stage":"All jobs on the desk",adminMode()?"Assign work, follow each stage and review submissions. Status moves by itself as people accept, deliver and get feedback.":"See what the whole team is working on. You can act on the tasks assigned to you.",
+    `<button class="btn" type="button" data-act="export">Export CSV</button>${adminMode()?`<button class="btn primary" type="button" data-act="newJob">Assign a job</button>`:""}`)
+  + guard("jobs", S.jobs.length===0?`<div class="emptystate"><h2>No jobs yet</h2><p>Admins assign jobs here. Each one shows its owner, stages, deadline and reviews.</p></div>`:`
+  <div class="toolbar"><label class="search">${ICON_SEARCH}<input id="q" type="search" placeholder="Search job, client, person…" value="${esc(S.f.q)}" aria-label="Search jobs"></label>
+    <select class="f" id="fStatus" aria-label="Status">${opt("open","Open jobs",S.f.status)}${opt("all","All statuses",S.f.status)}${STATUSES.map(s=>opt(s.k,s.k,S.f.status)).join("")}</select>
+    <select class="f" id="fMember" aria-label="Assigned to">${opt("all","Everyone",S.f.member)}${S.team.map(t=>opt(t.id,t.name,S.f.member)).join("")}</select>
+    <select class="f" id="fPrio" aria-label="Priority">${opt("all","Any priority",S.f.prio)}${PRIOS.map(p=>opt(p,p,S.f.prio)).join("")}</select>
+    <div class="seg" role="group" aria-label="Layout"><button type="button" data-act="mode" data-m="table" aria-pressed="${S.jobsMode==="table"}">Table</button><button type="button" data-act="mode" data-m="board" aria-pressed="${S.jobsMode==="board"}">Board</button></div>
+    <span class="count">${js.length} of ${S.jobs.length}</span></div>
+  ${js.length===0?`<div class="emptystate"><h2>No jobs match these filters</h2><p>Clear the search or choose another status.</p></div>`:(S.jobsMode==="table"?table:board)}`);
+}
+
+function renderSchedule(){
+  const t = today(), start = addDays(t,-((t.getDay()+6)%7)), N = 14, days = Array.from({length:N},(_,i)=>addDays(start,i));
+  const people = S.team.filter(m=>S.jobs.some(j=>j.assignee===m.id) || !isAdminRole(m));
+  const rowsFor = id => { const js = S.jobs.filter(j=>j.assignee===id && (j.deadline||j.start)).map(j=>{ const a = diff(parse(j.start||j.deadline),start), b = diff(parse(j.deadline||j.start),start); return {j,a:Math.max(0,a),b:Math.min(N-1,b)}; }).filter(x=>x.b>=0&&x.a<=N-1&&x.a<=x.b);
+    const rows=[]; js.sort((x,y)=>x.a-y.a).forEach(x=>{ let r = rows.findIndex(e=>e<x.a); if(r<0){r=rows.length;rows.push(-1);} rows[r]=x.b; x.r=r; }); return {js,h:Math.max(1,rows.length)*32+12}; };
+  const lane = (label, sub, id) => { const {js,h} = rowsFor(id);
+    return `<div class="rowhead" style="height:${h}px">${esc(label)}<small>${esc(sub)}</small></div><div class="lane" style="grid-column:2/-1;height:${h}px">
+      ${days.map((d,i)=>`<div style="position:absolute;top:0;bottom:0;left:${i/N*100}%;width:${100/N}%;border-left:1px solid var(--line)" class="${d.getDay()%6===0?"wknd":""}"></div>`).join("")}
+      ${js.map(x=>{ const s = status(x.j), late = (daysLeft(x.j)??0)<0; return `<div class="bar ${SC[s].c} ${late?"late":""}" data-act="openJob" data-id="${x.j.id}" title="${esc(x.j.task)} · ${esc(s)}" style="left:calc(${x.a/N*100}% + 3px);width:calc(${(x.b-x.a+1)/N*100}% - 6px);top:${8+x.r*32}px"><span class="mono" style="font-weight:500">${esc(x.j.jobId)}</span><span>${esc(x.j.task)}</span></div>`; }).join("")}</div>`; };
+  return head("03","Schedule","Two weeks, person by person","Each bar runs from a job's start date to its deadline. A red outline means the deadline has passed.")
+  + guard("jobs", `<div class="sched"><div class="sgrid" style="grid-template-columns:minmax(150px,180px) repeat(${N},minmax(52px,1fr))">
+    <div class="rowhead"><span class="eyebrow">Team</span></div>${days.map(d=>`<div class="dayh ${+d===+t?"today":""} ${d.getDay()%6===0?"wknd":""}">${DOW[d.getDay()]}<b>${d.getDate()}</b>${d.getDate()===1||+d===+start?MON[d.getMonth()]:""}</div>`).join("")}
+    ${people.map(p=>lane(p.name,p.role,p.id)).join("")}${S.jobs.some(j=>!j.assignee)?lane("Unassigned","","__none"):""}</div></div>
+    <div class="legend" style="margin-top:14px">${STATUSES.map(s=>`<span><i class="dot" style="background:var(${s.v})"></i>${s.k}</span>`).join("")}</div>`);
+}
+
+function renderTeam(){
+  const claims = adminMode() ? S.claims.filter(c=>c.claim && tById(c.claim) && !tById(c.claim).uid && !S.team.some(t=>t.uid===c.id)) : [];
+  return head("04","Team","Profiles, roles and access","Admins (video production manager, creative director, traffic manager) assign and review work. Team members act on their own tasks.",
+    adminMode()?`<button class="btn primary" type="button" data-act="newMember">Add person</button>`:"")
+  + linkCallout()
+  + (claims.length?`<section class="callout"><h2>Profile requests</h2><div class="claims">${claims.map(c=>`<div class="inline-form" style="justify-content:space-between"><span><b data-pname="${esc(c.id)}">Someone</b> says they are <b>${esc(tById(c.claim).name)}</b></span><span style="display:flex;gap:8px"><button class="btn sm primary" type="button" data-act="approveClaim" data-id="${esc(c.id)}">Confirm</button><button class="btn sm" type="button" data-act="rejectClaim" data-id="${esc(c.id)}">Decline</button></span></div>`).join("")}</div></section>`:"")
+  + guard("team", S.team.length===0?`<div class="emptystate"><h2>No team members yet</h2><p>Add each person with their role, craft and weekly hours.</p></div>`:`<div class="team-grid">${S.team.map(m=>{
+    const L = memberLoad(m), cap = num(m.capacity), p = cap ? L.hours/cap*100 : null, o = p>85, isMe = me()?.id===m.id, pf = perf(m,S.period);
+    const showScore = adminMode() || isMe;
+    return `<article class="person"><div class="person-top"><div class="person-name">${avatar(m)}<div><strong>${esc(m.name)}${isMe?' <span class="role-tag">You</span>':""}</strong><small>${esc(m.craft||"")}</small></div></div>${roleTag(m)}</div>
+      <div class="meta" style="font-size:12px;color:var(--muted)">${m.uid?"Linked to a Claude account":"Not linked to an account yet"}</div>
+      ${cap&&!isAdminRole(m)?`<div><div class="load" style="grid-template-columns:minmax(0,1fr) 52px"><div class="track"><div class="band"></div><div class="fill ${o?"over":""}" style="width:${Math.min(p,100)}%"></div></div><div class="pct ${o?"over":""}">${Math.round(p)}%</div></div><div style="font-size:12px;color:var(--muted);margin-top:6px">${L.hours} open hrs of ${cap} · ${L.jobs.length} active</div></div>`:""}
+      ${showScore&&!isAdminRole(m)?scoreBar(pf):""}
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn sm" href="#person-${esc(m.id)}">Open profile</a>${adminMode()?`<button class="btn sm ghost" type="button" data-act="editMember" data-id="${m.id}">Edit</button>${m.uid?"":`<button class="btn sm ghost" type="button" data-act="linkPerson" data-id="${m.id}">Link account</button>`}`:""}</div>
+    </article>`; }).join("")}</div>`);
+}
+
+function compRows(p){ return `<div class="comp">${W.map(([k,l,w])=>{ const c = p.C[k]; return `<div class="comp-row"><div>${l}<small>${w}% of score</small></div><div class="track"><div class="fill" style="width:${c?c.v:0}%;background:${!c?"var(--line)":c.v>=70?"var(--ink)":c.v>=55?"var(--warn)":"var(--bad)"}"></div></div><div class="val">${c?Math.round(c.v):"–"}<small>${esc(c?.label||"No data")}</small></div></div>`; }).join("")}</div>`; }
+function renderPerson(){
+  const m = tById(S.param); if (!m) return guard("team", `<div class="emptystate"><h2>Profile not found</h2><p><a href="#team">Back to the team</a></p></div>`);
+  const isMe = me()?.id===m.id, show = (adminMode()||isMe) && !isAdminRole(m), p = perf(m,S.period);
+  const mine = S.jobs.filter(j=>j.assignee===m.id), open = mine.filter(j=>OPEN(status(j))), done = mine.filter(j=>!OPEN(status(j))).sort((a,b)=>String(b.approvedAt).localeCompare(String(a.approvedAt)));
+  return `<div class="view-head"><div class="profile-head">${avatar(m)}<div><div class="eyebrow"><b>04</b><span>/</span><a href="#team" style="color:inherit">Team</a></div><h1 style="margin-top:6px">${esc(m.name)}</h1><p class="sub" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${roleTag(m)}<span>${esc(m.craft||"")}</span><span>·</span><span>${m.uid?"Linked account":"Not linked yet"}</span></p></div></div>
+    <div class="actions">${adminMode()?`<button class="btn" type="button" data-act="editMember" data-id="${m.id}">Edit profile</button>${!m.uid?`<button class="btn" type="button" data-act="linkPerson" data-id="${m.id}">Link account</button>`:""}<button class="btn primary" type="button" data-act="newJob" data-for="${m.id}">Assign a job</button>`:""}</div></div>
+  ${guard("jobs", `<div class="grid2"><div class="stack">
+    ${show?`<section class="panel"><div class="panel-head"><h2>Performance</h2>${periodSel()}</div><div style="display:flex;align-items:flex-end;gap:16px;margin-bottom:18px;flex-wrap:wrap"><span class="big-score">${p.score??"–"}</span><span class="grade ${p.grade.c}" style="margin-bottom:8px">${p.grade.l}</span><span class="sub" style="margin:0 0 8px">${p.done} job${p.done===1?"":"s"} closed in the period</span></div>${compRows(p)}</section>`:""}
+    <section class="panel"><div class="panel-head"><h2>Open tasks</h2><span class="hint">${open.length}</span></div>${open.length?`<div class="tasks">${open.map(taskCard).join("")}</div>`:`<p class="empty-line">No open tasks.</p>`}</section>
+    <section class="panel"><div class="panel-head"><h2>Delivered</h2><span class="hint">${done.length}</span></div>${done.length?`<div class="tbl-wrap" style="border:0"><table style="min-width:560px"><thead><tr><th>Job</th><th>Due</th><th>Submitted</th><th class="num">Int. rev</th><th class="num">Client rev</th><th class="num">Hours</th></tr></thead><tbody>
+      ${done.map(j=>{ const w = workOf(j), sub = isoDay(last(w.submissions)?.at||j.approvedAt), late = sub && j.deadline && sub > j.deadline;
+        return `<tr data-act="openJob" data-id="${j.id}"><td><div class="task">${esc(j.task)}</div><div class="meta mono">${esc(j.jobId)}</div></td><td class="mono">${fmt(j.deadline)}</td><td><span class="mono">${fmt(sub)}</span> <span class="tag ${late?"late":"ok"}">${late?"Late":"On time"}</span></td><td class="num mono">${(j.reviews||[]).filter(r=>r.type==="internal").length}</td><td class="num mono">${(j.reviews||[]).filter(r=>r.type==="client").length}</td><td class="num mono">${w.actualHours??"–"}/${j.estHours??"–"}</td></tr>`; }).join("")}</tbody></table></div>`:`<p class="empty-line">Nothing delivered yet.</p>`}</section>
+  </div><div class="stack">
+    <section class="panel"><div class="panel-head"><h2>Skills</h2><span class="hint">1 learning · 4 can train others</span></div><div class="skills">${SKILLS.map(([k,l])=>{ const lv = num(m.skills?.[k])||0;
+      return `<div class="skill"><span>${l}</span><span class="pips">${[1,2,3,4].map(i=>adminMode()?`<button type="button" class="pip ${i<=lv?"on":""}" data-act="skill" data-id="${m.id}" data-k="${k}" data-v="${i}" aria-label="Set ${l} to ${i}"></button>`:`<i class="pip ${i<=lv?"on":""}"></i>`).join("")}</span></div>`; }).join("")}</div>
+      ${m.training?`<div class="hr" style="margin:14px 0"></div><dl class="kv"><dt>Training</dt><dd>${esc(m.training)}</dd>${m.review?`<dt>Next review</dt><dd class="mono">${fmt(m.review)}</dd>`:""}</dl>`:""}</section>
+    ${show?`<section class="panel"><h2 style="margin-bottom:10px">How the score works</h2><p class="sub" style="margin:0 0 12px;font-size:13px">Each part is scored 0 to 100 from closed jobs in the period, then weighted. Parts with no data yet are left out.</p><div class="weights">${W.map(([k,l,w])=>`<div><b>${w}% · ${l}</b>${({onTime:"Final submission on or before the deadline.",stages:"Each stage marked complete by its due date.",internal:"Fewer internal change requests per job. Each one costs 25 points.",client:"Fewer client change rounds per job. Each one costs 30 points.",accept:"Time from assignment to acceptance. Within 4 hours scores full marks.",efficiency:"Estimated hours divided by hours actually used."})[k]}</div>`).join("")}</div></section>`:""}
+  </div></div>`)}`;
+}
+function periodSel(){ return `<select class="f" id="period" aria-label="Period" style="height:30px">${[[30,"Last 30 days"],[90,"Last 90 days"],[365,"Last 12 months"]].map(([v,l])=>`<option value="${v}" ${S.period===v?"selected":""}>${l}</option>`).join("")}</select>`; }
+function renderPerformance(){
+  if (!adminMode()) { const a = actor(); if (!a) return renderMy(); S.param = a.id; return renderPerson(); }
+  const rows = S.team.filter(m=>!isAdminRole(m)).map(m=>({m,p:perf(m,S.period)})).sort((a,b)=>(b.p.score??-1)-(a.p.score??-1));
+  const pct = c => c ? Math.round(c.v)+"%" : "–";
+  return head("06","Performance","How each person delivers","Scored from what the desk records: deadlines met, stage dates, internal and client revisions, how fast tasks are accepted, and hours against estimate.", periodSel())
+  + guard("jobs", `<div class="tbl-wrap"><table style="min-width:900px"><thead><tr><th>Person</th><th style="width:240px">Score</th><th class="num">On time</th><th class="num">Stages</th><th class="num">Int. rev / job</th><th class="num">Client rev / job</th><th class="num">Accept time</th><th class="num">Hours</th><th class="num">Closed</th></tr></thead><tbody>
+    ${rows.map(({m,p})=>`<tr data-act="goPerson" data-id="${m.id}" tabindex="0"><td><div class="person-name">${avatar(m)}<div><strong style="font-size:14px">${esc(m.name)}</strong><small>${esc(m.role)}</small></div></div></td><td>${scoreBar(p)}</td>
+      <td class="num mono">${pct(p.C.onTime)}</td><td class="num mono">${pct(p.C.stages)}</td><td class="num mono">${p.C.internal?p.C.internal.raw.toFixed(1):"–"}</td><td class="num mono">${p.C.client?p.C.client.raw.toFixed(1):"–"}</td>
+      <td class="num mono">${p.C.accept?.label.replace(" avg","")||"–"}</td><td class="num mono">${pct(p.C.efficiency)}</td><td class="num mono">${p.done}</td></tr>`).join("")}</tbody></table></div>
+    <section class="panel" style="margin-top:22px"><h2 style="margin-bottom:12px">How the score works</h2><div class="weights">${W.map(([,l,w])=>`<div><b>${w}%</b>${l}</div>`).join("")}</div>
+    <p class="sub" style="font-size:13px">Grades: 85+ Excellent · 70–84 Strong · 55–69 Needs support · under 55 At risk. Use it to start a conversation, together with the work itself.</p></section>`);
+}
+
+function renderEquipment(){
+  const q = S.eqf.q.trim().toLowerCase(), es = S.equipment.filter(e=>(S.eqf.status==="all"||e.status===S.eqf.status)&&(!q||[e.code,e.item,e.category,e.holder,e.jobId].join(" ").toLowerCase().includes(q))).sort((a,b)=>String(a.code).localeCompare(String(b.code)));
+  const opt = (v,l,c) => `<option value="${esc(v)}" ${v===c?"selected":""}>${esc(l)}</option>`, cnt = k => S.equipment.filter(e=>e.status===k).length;
+  return head("07","Equipment","Every item coded, logged and serviced",`Code format CATEGORY-MODEL-UNIT, for example <span class="code">CAM-FX3-02</span>. Service is due every 90 days.`, adminMode()?`<button class="btn primary" type="button" data-act="newEq">Add item</button>`:"")
+  + guard("equipment", `<div class="toolbar"><label class="search">${ICON_SEARCH}<input id="eq" type="search" placeholder="Search code, item, person…" value="${esc(S.eqf.q)}" aria-label="Search equipment"></label>
+    <select class="f" id="eStatus" aria-label="Status">${opt("all",`All items (${S.equipment.length})`,S.eqf.status)}${EQ_STATUS.map(s=>opt(s,`${s} (${cnt(s)})`,S.eqf.status)).join("")}</select><span class="count">${es.length} shown</span></div>
+  <div class="tbl-wrap"><table style="min-width:880px"><thead><tr><th>Code</th><th>Item</th><th>Status</th><th>With</th><th>Job</th><th>Last service</th><th>Next service</th><th></th></tr></thead><tbody>
+  ${es.map(e=>{ const ss = serviceState(e); return `<tr data-act="openEq" data-id="${e.id}" tabindex="0"><td><span class="code">${esc(e.code)}</span></td><td><div class="task">${esc(e.item)}</div><div class="meta">${esc(e.category)}${e.notes?` · ${esc(e.notes)}`:""}</div></td>
+    <td><span class="chip ${EQ_SC[e.status]||"s-ns"}">${esc(e.status)}</span></td><td>${esc(e.holder||"–")}${e.checkout?`<div class="meta">since ${fmt(e.checkout)}</div>`:""}</td><td class="mono">${esc(e.jobId||"–")}</td><td class="mono">${fmt(e.lastService)}</td>
+    <td><span class="mono">${fmt(nextService(e))}</span>${ss&&ss!=="OK"?` <span class="flag ${ss==="Overdue"?"bad":"warn"}">${ss}</span>`:""}</td>
+    <td style="text-align:right;white-space:nowrap">${adminMode()?(e.status==="Checked out"?`<button class="btn sm" type="button" data-act="checkIn" data-id="${e.id}">Check in</button>`:"")+` <button class="btn sm ghost" type="button" data-act="serviced" data-id="${e.id}">Log service</button>`:""}</td></tr>`; }).join("")}</tbody></table></div>`);
+}
+function renderVendors(){
+  const vs = [...S.vendors].sort((a,b)=>(vAvg(b)??0)-(vAvg(a)??0));
+  return head("08","Vendors","The bench, ranked by last-job scores","Score every vendor 1 to 5 after each job. The top of this list gets the next brief.", adminMode()?`<button class="btn primary" type="button" data-act="newVendor">Add vendor</button>`:"")
+  + guard("vendors", `<div class="tbl-wrap"><table style="min-width:820px"><thead><tr><th>#</th><th>Vendor</th>${V_CRIT.map(([,l])=>`<th>${l}</th>`).join("")}<th>Average</th><th class="num">Jobs</th></tr></thead><tbody>
+  ${vs.map((v,i)=>{ const a = vAvg(v); return `<tr data-act="openVendor" data-id="${v.id}" tabindex="0"><td class="mono" style="color:var(--muted)">${pad(i+1)}</td><td><div class="task">${esc(v.name)}</div><div class="meta">${esc(v.category)}${v.notes?` · ${esc(v.notes)}`:""}</div></td>
+    ${V_CRIT.map(([k])=>{ const s = num(v.scores?.[k])||0; return `<td><span class="score" aria-label="${s} of 5">${[1,2,3,4,5].map(n=>`<i class="${n<=s?"on":""}"></i>`).join("")}</span></td>`; }).join("")}
+    <td><span class="avg ${a>=4?"good":a!=null&&a<3?"bad":""}">${a==null?"–":a.toFixed(1)}</span></td><td class="num mono">${esc(v.jobs??"–")}</td></tr>`; }).join("")}</tbody></table></div>`);
+}
+
+/* ================= render ================= */
+function render(){
+  renderChrome();
+  if (!S.allowed.includes(S.view)) S.view = S.allowed[0];
+  const f = document.activeElement?.id, sel = f && document.activeElement.selectionStart;
+  $("#main").innerHTML = VIEWS[S.view]();
+  if (f==="q"||f==="eq") { const el = document.getElementById(f); if (el) { el.focus(); try{ el.setSelectionRange(sel,sel); }catch(_){} } }
+  $("#todayLbl").textContent = ymd(today());
+  resolveNames();
+}
+function route(){ const h = location.hash.slice(1); if (h.startsWith("person-")) { S.view = "person"; S.param = h.slice(7); } else { S.view = VIEWS[h] ? h : "overview"; S.param = null; } render(); window.scrollTo(0,0); }
+async function resolveNames(){
+  if (!S.user) return; const ids = [...new Set([...S.team.map(t=>t.uid), ...S.claims.map(c=>c.id)].filter(Boolean))]; if (!ids.length) return;
+  try { const ps = await S.user.profiles(ids); let changed = false; ids.forEach(id=>{ if (ps[id] && S.profiles[id]?.avatarUrl !== ps[id].avatarUrl) { S.profiles[id] = ps[id]; changed = true; } });
+    document.querySelectorAll("[data-pname]").forEach(el=>{ el.textContent = ps[el.dataset.pname]?.name || "Someone"; });
+    if (changed) { renderChrome(); } } catch(_){}
+}
+
+/* ================= writes ================= */
+async function put(path, data, mode="set"){
+  if (!S.db) { toast("Not connected. Changes can't be saved in this view."); return false; }
+  try { const ref = S.db.doc(path); if (mode==="set") await ref.set(data); else if (mode==="update") await ref.update(data); else await ref.delete(); return true; }
+  catch (e) { if (e?.code==="invalid_argument") toast("You don't have permission for that. Admins assign jobs; team members update their own tasks.");
+    else if (e?.code==="quota_exceeded") toast("The tracker is full. Delete old records, then try again."); else toast("Couldn't save. Check your connection and try again."); return false; }
+}
+const newId = coll => S.db.collection(coll).doc().id;
+async function saveWork(j, patch){ const t = tById(j.assignee); if (!t) return false; const cur = workOf(j);
+  return put(`work/${keyOf(t)}/jobs/${j.id}`, {...JSON.parse(JSON.stringify(cur)), ...patch, updatedAt:nowIso()}); }
+async function linkProfile(t, uid){
+  const oldKey = "p-"+t.id;
+  if (!(await put(`team/${t.id}`, {uid}, "update"))) return false;
+  for (const [jid,w] of Object.entries(S.work[oldKey]||{})) { await put(`work/${uid}/jobs/${jid}`, w); await put(`work/${oldKey}/jobs/${jid}`, null, "delete"); }
+  for (const c of (S.comments[oldKey]||[])) { const {id, ...rest} = c; await put(`work/${uid}/comments/${id}`, rest); await put(`work/${oldKey}/comments/${id}`, null, "delete"); }
+  return true;
+}
+
+/* ================= drawer ================= */
+const field = (id,label,val,type="text",cls="",dis=false) => `<label class="fl ${cls}"><span>${label}</span><input id="${id}" name="${id}" type="${type}" value="${esc(val??"")}" ${type==="number"?'step="0.5" min="0"':""} ${dis?"disabled":""}></label>`;
+const sel = (id,label,opts,val,cls="",dis=false) => `<label class="fl ${cls}"><span>${label}</span><select id="${id}" name="${id}" ${dis?"disabled":""}>${opts.map(o=>{ const [v,l] = Array.isArray(o)?o:[o,o]; return `<option value="${esc(v)}" ${String(v)===String(val??"")?"selected":""}>${esc(l)}</option>`; }).join("")}</select></label>`;
+const area = (id,label,val,cls="full",dis=false) => `<label class="fl ${cls}"><span>${label}</span><textarea id="${id}" name="${id}" ${dis?"disabled":""}>${esc(val??"")}</textarea></label>`;
+const fsec = t => `<div class="fsec">${t}</div>`;
+function openDrawer(kind, rec, extra){ S.drawer = {kind, id:rec?.id||null, confirm:false, extra}; drawDrawer(); $("#drawer").classList.add("open"); $("#scrim").classList.add("open"); $("#drawer").setAttribute("aria-hidden","false"); }
+function closeDrawer(){ $("#drawer").classList.remove("open","wide"); $("#scrim").classList.remove("open"); $("#drawer").setAttribute("aria-hidden","true"); S.drawer = null; }
+function drawDrawer(){
+  const D = S.drawer; if (!D) return;
+  $("#drawer").classList.toggle("wide", D.kind==="task");
+  const fn = {task:drawTask, job:drawJobForm, member:drawMemberForm, eq:drawEqForm, vendor:drawVendorForm, link:drawLink}[D.kind];
+  const {eyebrow,title,body,foot} = fn(D);
+  $("#dEyebrow").innerHTML = eyebrow; $("#dTitle").innerHTML = title; $("#dBody").innerHTML = body; $("#dFoot").innerHTML = foot;
+}
+function stdFoot(isNew, canDelete=true){
+  if (S.drawer.confirm) return `<div class="confirm"><span>Delete this for everyone?</span><button type="button" class="btn danger sm" data-act="reallyDelete">Delete</button><button type="button" class="btn sm" data-act="cancelDelete">Keep it</button></div>`;
+  return `${!isNew&&canDelete?`<button type="button" class="btn danger" data-act="askDelete">Delete</button>`:""}<span class="spacer"></span><button type="button" class="btn" data-act="close">Cancel</button><button type="submit" class="btn primary">${isNew?"Save":"Save changes"}</button>`;
+}
+
+function drawTask(D){
+  const j = S.jobs.find(x=>x.id===D.id); if (!j) return {eyebrow:"",title:"This job was removed",body:"",foot:`<span class="spacer"></span><button type="button" class="btn" data-act="close">Close</button>`};
+  const s = status(j), w = workOf(j), t = tById(j.assignee), act = canActOn(j), adm = adminMode(), open = OPEN(s);
+  const step = (cls, title, when, inner="") => `<div class="step ${cls}"><span class="dotc">${cls.includes("done")?CHECK:""}</span><div class="body"><div class="row1"><strong>${title}</strong>${when?`<span class="when">${when}</span>`:""}</div>${inner}</div></div>`;
+  const stageSteps = stagesOf(j).map(st=>{ const d = w.stages?.[st.k], late = st.due && (d?.doneAt ? isoDay(d.doneAt) > st.due : st.due < ymd(today()));
+    let inner = "";
+    if (d?.doneAt) inner = `<div class="inline-form">${d.link?`<a class="linkout" href="${esc(d.link)}" target="_blank" rel="noopener">${esc(d.link)}</a>`:`<span class="meta" style="color:var(--muted);font-size:13px">No link added</span>`}${act&&open?`<button type="button" class="btn sm ghost" data-act="undoStage" data-k="${st.k}">Undo</button>`:""}</div>`;
+    else if (act && open && w.acceptedAt) inner = `<div class="inline-form"><input id="lk_${st.k}" type="url" placeholder="Link to this stage (Frame.io, Drive…)" aria-label="Link for ${STAGE_L[st.k]}"><button type="button" class="btn sm primary" data-act="stageDone" data-k="${st.k}">Mark complete</button></div>`;
+    return step(`${d?.doneAt?"done":""} ${late?"late":""}`, STAGE_L[st.k], `${st.due?`due ${fmt(st.due)}`:""}${d?.doneAt?` · done ${fmt(isoDay(d.doneAt))}`:""}${late?` <span class="tag late">Late</span>`:d?.doneAt&&st.due?` <span class="tag ok">On time</span>`:""}`, inner); }).join("");
+  const events = [...(w.submissions||[]).map(x=>({...x,kind:"sub"})), ...(j.reviews||[]).map(x=>({...x,kind:x.type}))].sort((a,b)=>String(a.at).localeCompare(String(b.at)));
+  const evSteps = events.map(e=> e.kind==="sub"
+    ? step("done","Submitted for review",ago(e.at), `${e.link?`<a class="linkout" href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.link)}</a>`:""}${e.note?`<p class="brief" style="font-size:13px;color:var(--muted)">${esc(e.note)}</p>`:""}`)
+    : step("", e.kind==="internal"?`Internal changes requested <span class="tag int">Internal</span>`:`Client changes requested <span class="tag cli">Client</span>`, `${ago(e.at)}${e.by?` · ${esc(tById(e.by)?.name||"")}`:""}`, e.note?`<p class="brief" style="font-size:13px">${esc(e.note)}</p>`:"")).join("");
+  const canSubmit = act && open && w.acceptedAt && s!=="In review";
+  const reviewBox = adm && open && j.assignee ? `<div class="step"><span class="dotc"></span><div class="body"><div class="row1"><strong>Review</strong>${s==="In review"?`<span class="tag cli">Waiting for you</span>`:""}</div>
+      <div class="inline-form"><textarea id="revNote" placeholder="Notes for ${esc(t?.name||"the assignee")} (what to change, or approval note)" aria-label="Review note"></textarea>
+      <button type="button" class="btn sm" data-act="review" data-type="internal">Request changes</button><button type="button" class="btn sm" data-act="review" data-type="client">Log client changes</button><button type="button" class="btn sm primary" data-act="approve">Approve and close</button></div></div></div>` : "";
+  const comments = commentsFor(j);
+  const body = `
+    <div class="facts"><div><small>Assigned to</small><span>${t?`<a href="#person-${esc(t.id)}" data-act="close" style="color:inherit">${esc(t.name)}</a>`:"Nobody yet"}</span></div><div><small>Due</small><span class="mono">${fmt(j.deadline)}</span> ${daysCell(j)}</div><div><small>Status</small>${chip(s)}</div>
+      <div><small>Client</small><span>${esc(j.client||"–")}</span></div><div><small>Deliverable</small><span>${esc(j.format||"–")}</span></div><div><small>Estimate</small><span class="mono">${esc(j.estHours??"–")}h${w.actualHours!=null?` · used ${esc(w.actualHours)}h`:""}</span></div>
+      ${j.equipment||j.vendor?`<div style="grid-column:1/-1"><small>Kit / vendor</small><span>${(j.equipment||"").split(",").map(x=>x.trim()).filter(Boolean).map(c=>`<span class="code">${esc(c)}</span>`).join(" ")}${j.vendor?` ${esc(j.vendor)}`:""}</span></div>`:""}</div>
+    ${j.brief||j.briefLink?`<div class="sec-title">Brief</div>${j.brief?`<p class="brief">${esc(j.brief)}</p>`:""}${j.briefLink?`<a class="linkout" href="${esc(j.briefLink)}" target="_blank" rel="noopener">${esc(j.briefLink)}</a>`:""}`:""}
+    <div class="sec-title">Progress</div>
+    <div class="flow">
+      ${step(j.assignedAt?"done":"", "Assigned", j.assignedAt?`${ago(j.assignedAt)}${j.assignedBy?` by ${esc(tById(j.assignedBy)?.name||"an admin")}`:""}`:"Not yet")}
+      ${step(w.acceptedAt?"done":"", "Accepted", w.acceptedAt?ago(w.acceptedAt):"", !w.acceptedAt&&act&&open?`<div class="inline-form"><button type="button" class="btn sm primary" data-act="accept" data-id="${j.id}">Accept task</button><span style="font-size:12.5px;color:var(--muted)">Confirms you have the brief and the deadline.</span></div>`:"")}
+      ${stageSteps}${evSteps}
+      ${canSubmit?`<div class="step"><span class="dotc"></span><div class="body"><div class="row1"><strong>Submit for review</strong></div><div class="inline-form"><input id="subLink" type="url" placeholder="Link to the finished file" aria-label="Submission link"><textarea id="subNote" placeholder="Note for the reviewer (optional)" aria-label="Submission note"></textarea><button type="button" class="btn sm primary" data-act="submit">Submit</button></div></div></div>`:""}
+      ${reviewBox}
+      ${j.approvedAt?step("done","Approved and closed",`${ago(j.approvedAt)}${j.approvedBy?` by ${esc(tById(j.approvedBy)?.name||"an admin")}`:""}`, adm?`<div class="inline-form"><button type="button" class="btn sm ghost" data-act="reopen">Reopen</button></div>`:""):""}
+    </div>
+    ${act&&open?`<div class="sec-title">Your update</div><div class="inline-form">
+      ${w.blocked?`<span class="tag late">Blocked</span><span style="font-size:13px">${esc(w.blockedNote||"")}</span><button type="button" class="btn sm" data-act="unblock">Clear block</button>`:`<input id="blockNote" placeholder="What is blocking you?" aria-label="Blocker"><button type="button" class="btn sm" data-act="block">Flag as blocked</button>`}</div>
+      <div class="inline-form"><input id="hours" type="number" min="0" step="0.5" value="${esc(w.actualHours??"")}" placeholder="Hours spent so far" aria-label="Hours spent" style="flex:0 1 180px"><button type="button" class="btn sm" data-act="hours">Save hours</button></div>`:""}
+    <div class="sec-title">Comments · ${comments.length}</div>
+    <div class="thread">${comments.map(c=>{ const a = tById(c.author); return `<div class="msg">${avatar(a)}<div><div class="who">${esc(a?.name||"Someone")}${a?roleTag(a):""}<small>${ago(c.at)}</small></div><p>${esc(c.text)}</p></div></div>`; }).join("") || `<p class="empty-line">No comments yet.</p>`}</div>
+    ${actor()&&(act||adm||S.isAdmin)?`<div class="inline-form"><textarea id="cText" placeholder="Write a comment for ${esc(t&&actor()?.id!==t.id?t.name:"the team")}…" aria-label="Comment"></textarea><button type="button" class="btn sm primary" data-act="comment">Post comment</button></div>`:actor()?"":`<p class="empty-line">Link your profile to comment.</p>`}`;
+  return {eyebrow:`<span class="mono">${esc(j.jobId)}</span> ${prio(j.priority)}`, title:esc(j.task), body,
+    foot:`${adm?`<button type="button" class="btn" data-act="editJob" data-id="${j.id}">Edit brief</button>`:""}<span class="spacer"></span><button type="button" class="btn" data-act="close">Close</button>`};
+}
+function drawJobForm(D){
+  const j = S.jobs.find(x=>x.id===D.id) || {}; const isNew = !D.id;
+  const pre = D.extra || j.assignee || "";
+  const st = Object.fromEntries((j.stages||(isNew?[{k:"rough"},{k:"master"}]:[])).map(s=>[s.k,s]));
+  return {eyebrow: isNew?"New job":`<span class="mono">${esc(j.jobId)}</span>`, title: isNew?"Assign a job":"Edit brief",
+    body:`<div class="fgrid">${fsec("Brief")}${field("jobId","Job ID",j.jobId||nextJobId())}${sel("priority","Priority",PRIOS,j.priority||"P2 High")}
+      ${field("task","Task",j.task,"text","full")}${field("client","Client / project",j.client)}${field("format","Deliverable format",j.format)}
+      ${area("brief","Brief and notes",j.brief)}${field("briefLink","Brief / reference link",j.briefLink,"url","full")}
+      ${fsec("Assignment")}${sel("assignee","Assign to",[["","Not assigned yet"],...S.team.map(t=>[t.id,`${t.name} · ${t.role}`])],pre,"full")}
+      ${field("start","Start date",j.start||ymd(today()),"date")}${field("deadline","Deadline",j.deadline,"date")}
+      ${field("estHours","Estimated hours",j.estHours,"number")}${sel("vendor","Vendor (if outsourced)",[["","None"],...S.vendors.map(v=>[v.name,v.name])],j.vendor)}
+      ${field("equipment","Equipment codes",j.equipment,"text","full")}
+      ${fsec("Stages to deliver")}<div class="stagepick full">${STAGES.map(([k,l])=>`<label><input type="checkbox" id="st_${k}" ${st[k]?"checked":""}><span>${l}</span><input type="date" id="sd_${k}" value="${esc(st[k]?.due||"")}" aria-label="${l} due date"></label>`).join("")}</div>
+      <p class="full sub" style="margin:0;font-size:12.5px">The assignee marks each stage complete with a link. Stage dates feed their score.</p></div>`,
+    foot: stdFoot(isNew)};
+}
+function drawMemberForm(D){
+  const m = S.team.find(x=>x.id===D.id) || {}; const isNew = !D.id;
+  return {eyebrow: isNew?"New person":"Profile", title: isNew?"Add a team member":esc(m.name),
+    body:`<div class="fgrid">${field("name","Name",m.name)}${sel("role","Role",ROLES,m.role||"Editor")}${sel("craft","Craft",CRAFTS,m.craft||"Editing")}
+      ${field("capacity","Weekly capacity (hrs)",m.capacity??40,"number")}${field("review","Next review",m.review,"date")}${area("training","Training focus",m.training)}
+      ${fsec("Skills, 1 to 4")}${SKILLS.map(([k,l])=>sel("sk_"+k,l,[[0,"Not rated"],[1,"1 Learning"],[2,"2 Capable"],[3,"3 Strong"],[4,"4 Can train others"]],m.skills?.[k]??0)).join("")}
+      ${m.uid?`<div class="full" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="sub" style="margin:0">Linked to a Claude account.</span><button type="button" class="btn sm" data-act="unlink" data-id="${m.id}">Unlink</button></div>`:""}
+      <p class="full sub" style="margin:0;font-size:12.5px">Admin roles only label people. What someone can do comes from their access to this page: Editors act as admins, Contributors as team members.</p></div>`,
+    foot: stdFoot(isNew)};
+}
+function drawLink(D){
+  const t = tById(D.id);
+  return {eyebrow:"Link account", title:`Who is ${esc(t?.name||"this person")}?`,
+    body:`<p class="sub" style="margin:0">Search your organization and pick the person's Claude account. Their tasks then appear under "My tasks" when they open this page.</p>
+      <label class="search">${ICON_SEARCH}<input id="pSearch" type="search" placeholder="Search by name" aria-label="Search people" autocomplete="off"></label>
+      <div id="pResults" style="display:grid;gap:8px"></div>
+      ${S.uid&&!me()?`<div class="hr"></div><button type="button" class="btn" data-act="linkMeTo" data-id="${t?.id}">This profile is me</button>`:""}`,
+    foot:`<span class="spacer"></span><button type="button" class="btn" data-act="close">Cancel</button>`};
+}
+function drawEqForm(D){
+  const e = S.equipment.find(x=>x.id===D.id) || {}, isNew = !D.id, dis = !adminMode();
+  return {eyebrow: isNew?"New item":`<span class="code">${esc(e.code)}</span>`, title: isNew?"Add equipment":esc(e.item),
+    body:`<div class="fgrid">${field("code","Code",e.code,"text","",dis)}${sel("category","Category",EQ_CATS,e.category||"CAM camera","",dis)}${field("item","Item / model",e.item,"text","full",dis)}
+      ${field("serial","Serial no.",e.serial,"text","",dis)}${sel("status","Status",EQ_STATUS,e.status||"Available","",dis)}
+      ${fsec("Check-out")}${sel("holder","Checked out to",[["",""],...S.team.map(t=>[t.name,t.name])].concat(e.holder&&!S.team.some(t=>t.name===e.holder)?[[e.holder,e.holder]]:[]),e.holder,"",dis)}
+      ${sel("eqJob","For job",[["",""],...S.jobs.filter(j=>OPEN(status(j))).map(j=>[j.jobId,`${j.jobId} · ${j.task}`])].concat(e.jobId&&!S.jobs.some(j=>j.jobId===e.jobId)?[[e.jobId,e.jobId]]:[]),e.jobId,"",dis)}
+      ${field("checkout","Check-out date",e.checkout,"date","",dis)}${fsec("Service")}${field("lastService","Last service",e.lastService,"date","",dis)}
+      <label class="fl"><span>Next service</span><input disabled value="${esc(fmt(nextService(e)))}"></label>${area("notes","Notes",e.notes,"full",dis)}</div>`,
+    foot: dis?`<span class="spacer"></span><button type="button" class="btn" data-act="close">Close</button>`:stdFoot(isNew)};
+}
+function drawVendorForm(D){
+  const v = S.vendors.find(x=>x.id===D.id) || {}, isNew = !D.id, dis = !adminMode();
+  return {eyebrow: isNew?"New vendor":"Vendor", title: isNew?"Add a vendor":esc(v.name),
+    body:`<div class="fgrid">${field("name","Vendor",v.name,"text","",dis)}${sel("category","Category",V_CATS,v.category||"Production house","",dis)}${field("contact","Contact person",v.contact,"text","",dis)}${field("phone","Phone / email",v.phone,"text","",dis)}
+      ${fsec("Score after the last job")}${V_CRIT.map(([k,l])=>sel("sc_"+k,l,[[0,"Not scored"],1,2,3,4,5],v.scores?.[k]??0,"",dis)).join("")}
+      ${field("jobs","Jobs done",v.jobs,"number","",dis)}${field("lastJob","Last job ID",v.lastJob,"text","",dis)}${area("notes","Notes",v.notes,"full",dis)}</div>`,
+    foot: dis?`<span class="spacer"></span><button type="button" class="btn" data-act="close">Close</button>`:stdFoot(isNew)};
+}
+const V = id => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
+
+async function submitForm(){
+  const D = S.drawer, now = nowIso(), a = me();
+  if (D.kind==="job") {
+    if (!V("task")) return toast("Add a task name so the assignee knows what the job is.");
+    if (V("start") && V("deadline") && V("deadline") < V("start")) return toast("The deadline is before the start date.");
+    const prev = S.jobs.find(x=>x.id===D.id) || {};
+    const stages = STAGES.filter(([k])=>document.getElementById("st_"+k)?.checked).map(([k])=>({k, due:V("sd_"+k)}));
+    const assignee = V("assignee");
+    const o = {...JSON.parse(JSON.stringify(prev)), jobId:V("jobId")||nextJobId(), priority:V("priority"), task:V("task"), client:V("client"), format:V("format"), brief:V("brief"), briefLink:V("briefLink"),
+      assignee, start:V("start"), deadline:V("deadline"), estHours:num(V("estHours")), vendor:V("vendor"), equipment:V("equipment").toUpperCase(), stages, updatedAt:now};
+    delete o.id;
+    if (assignee && assignee !== prev.assignee) { o.assignedAt = now; o.assignedBy = a?.id || null; o.reviews = prev.assignee ? [] : (prev.reviews||[]); }
+    if (!assignee) { o.assignedAt = null; }
+    if (!prev.createdAt) o.createdAt = now;
+    if (await put(`jobs/${D.id||newId("jobs")}`, o)) { toast(D.id?"Saved":"Job assigned"); closeDrawer(); }
+  } else if (D.kind==="member") {
+    if (!V("name")) return toast("Add the person's name.");
+    const prev = S.team.find(x=>x.id===D.id) || {};
+    const o = {...JSON.parse(JSON.stringify(prev)), name:V("name"), role:V("role"), craft:V("craft"), capacity:num(V("capacity")), review:V("review"), training:V("training"), skills:Object.fromEntries(SKILLS.map(([k])=>[k,num(V("sk_"+k))||0])), updatedAt:now};
+    delete o.id;
+    if (await put(`team/${D.id||newId("team")}`, o)) { toast(D.id?"Saved":"Added"); closeDrawer(); }
+  } else if (D.kind==="eq") {
+    if (!V("code")) return toast("Add a code, for example CAM-FX3-03.");
+    const prev = S.equipment.find(x=>x.id===D.id) || {};
+    const o = {...JSON.parse(JSON.stringify(prev)), code:V("code").toUpperCase(), category:V("category"), item:V("item"), serial:V("serial"), status:V("status"), holder:V("holder"), jobId:V("eqJob"), checkout:V("checkout"), lastService:V("lastService"), notes:V("notes"), updatedAt:now};
+    delete o.id;
+    if (o.holder && o.status==="Available") { o.status = "Checked out"; if (!o.checkout) o.checkout = ymd(today()); }
+    if (o.status!=="Checked out") { o.holder=""; o.jobId=""; o.checkout=""; }
+    if (await put(`equipment/${D.id||newId("equipment")}`, o)) { toast("Saved"); closeDrawer(); }
+  } else if (D.kind==="vendor") {
+    if (!V("name")) return toast("Add the vendor's name.");
+    const prev = S.vendors.find(x=>x.id===D.id) || {};
+    const o = {...JSON.parse(JSON.stringify(prev)), name:V("name"), category:V("category"), contact:V("contact"), phone:V("phone"), scores:Object.fromEntries(V_CRIT.map(([k])=>[k,num(V("sc_"+k))||0])), jobs:num(V("jobs")), lastJob:V("lastJob"), notes:V("notes"), updatedAt:now};
+    delete o.id;
+    if (await put(`vendors/${D.id||newId("vendors")}`, o)) { toast("Saved"); closeDrawer(); }
+  }
+}
+
+/* ================= events ================= */
+document.addEventListener("submit", e => { e.preventDefault(); if (S.drawer && adminMode()) submitForm(); });
+document.addEventListener("click", async e => {
+  const el = e.target.closest("[data-act]"); if (!el) return;
+  const a = el.dataset.act, id = el.dataset.id, D = S.drawer, j = D?.kind==="task" ? S.jobs.find(x=>x.id===D.id) : null;
+  if (el.closest(".task-card") && el !== el.closest(".task-card")) e.stopPropagation();
+  switch (a) {
+    case "close": closeDrawer(); break;
+    case "endPreview": S.previewId = null; render(); break;
+    case "openJob": openDrawer("task", {id}); break;
+    case "goPerson": location.hash = "person-"+id; break;
+    case "newJob": openDrawer("job", null, el.dataset.for); break;
+    case "editJob": openDrawer("job", {id}); break;
+    case "newMember": openDrawer("member", null); break;
+    case "editMember": openDrawer("member", {id}); break;
+    case "linkPerson": openDrawer("link", {id}); setTimeout(()=>{ const i = $("#pSearch"); i && (i.focus(), peopleSearch("")); }, 50); break;
+    case "newEq": openDrawer("eq", null); break;
+    case "openEq": openDrawer("eq", {id}); break;
+    case "newVendor": openDrawer("vendor", null); break;
+    case "openVendor": openDrawer("vendor", {id}); break;
+    case "sort": { const k = el.dataset.k; S.sort = {k, d:S.sort.k===k?-S.sort.d:1}; render(); break; }
+    case "mode": S.jobsMode = el.dataset.m; try{ localStorage.setItem("bp-mode",S.jobsMode); }catch(_){} render(); break;
+    case "askDelete": D.confirm = true; drawDrawer(); break;
+    case "cancelDelete": D.confirm = false; drawDrawer(); break;
+    case "reallyDelete": { const coll = {job:"jobs",member:"team",eq:"equipment",vendor:"vendors"}[D.kind]; if (await put(`${coll}/${D.id}`, null, "delete")) { toast("Deleted"); closeDrawer(); } break; }
+    /* member actions */
+    case "accept": { const job = j || S.jobs.find(x=>x.id===id); if (job && await saveWork(job, {acceptedAt:nowIso()})) toast("Task accepted"); break; }
+    case "stageDone": { const k = el.dataset.k, link = V("lk_"+k), w = workOf(j); if (link && !/^https?:\/\//i.test(link)) return toast("Links start with http:// or https://");
+      if (await saveWork(j, {startedAt:w.startedAt||nowIso(), stages:{...(w.stages||{}), [k]:{doneAt:nowIso(), link}}})) toast(`${STAGE_L[k]} marked complete`); break; }
+    case "undoStage": { const k = el.dataset.k, w = workOf(j), st = {...(w.stages||{})}; delete st[k]; if (await saveWork(j, {stages:st})) toast("Stage reopened"); break; }
+    case "submit": { const link = V("subLink"); if (!link) return toast("Add the link to the finished file before submitting."); if (!/^https?:\/\//i.test(link)) return toast("Links start with http:// or https://");
+      const w = workOf(j); if (await saveWork(j, {startedAt:w.startedAt||nowIso(), submissions:[...(w.submissions||[]), {at:nowIso(), link, note:V("subNote")}], blocked:false})) toast("Submitted for review"); break; }
+    case "block": { const n = V("blockNote"); if (!n) return toast("Say what is blocking you, so the admins can help."); if (await saveWork(j, {blocked:true, blockedNote:n})) toast("Flagged as blocked"); break; }
+    case "unblock": if (await saveWork(j, {blocked:false, blockedNote:""})) toast("Block cleared"); break;
+    case "hours": { const h = num(V("hours")); if (h==null) return toast("Enter hours as a number."); if (await saveWork(j, {actualHours:h})) toast("Hours saved"); break; }
+    case "comment": { const txt = V("cText"), au = actor(); if (!txt) return; if (!au) return toast("Link your profile to comment.");
+      const key = keyOf(au); if (await put(`work/${key}/comments/${S.db.collection(`work/${key}/comments`).doc().id}`, {jobId:j.id, text:txt, at:nowIso(), author:au.id})) { $("#cText").value = ""; toast("Comment posted"); } break; }
+    /* admin actions */
+    case "review": { const type = el.dataset.type, note = V("revNote"); if (!note) return toast("Add a note so the assignee knows what to change.");
+      if (await put(`jobs/${j.id}`, {reviews:[...(j.reviews||[]), {type, at:nowIso(), note, by:me()?.id||null}], updatedAt:nowIso()}, "update")) toast(type==="internal"?"Changes requested":"Client changes logged"); break; }
+    case "approve": { if (await put(`jobs/${j.id}`, {approvedAt:nowIso(), approvedBy:me()?.id||null, updatedAt:nowIso()}, "update")) { const n = V("revNote"); if (n && actor()) await put(`work/${keyOf(actor())}/comments/${S.db.collection("work").doc().id}`, {jobId:j.id, text:n, at:nowIso(), author:actor().id}); toast("Approved and closed"); } break; }
+    case "reopen": if (await put(`jobs/${j.id}`, {approvedAt:null, approvedBy:null, updatedAt:nowIso()}, "update")) toast("Reopened"); break;
+    case "skill": { const m = tById(id); const v = +el.dataset.v, cur = num(m?.skills?.[el.dataset.k])||0; await put(`team/${id}`, {skills:{[el.dataset.k]: cur===v?v-1:v}}, "update"); break; }
+    case "checkIn": if (await put(`equipment/${id}`, {status:"Available", holder:"", jobId:"", checkout:"", updatedAt:nowIso()}, "update")) toast("Checked in"); break;
+    case "serviced": { const x = S.equipment.find(q=>q.id===id); if (await put(`equipment/${id}`, {lastService:ymd(today()), status:x?.status==="In service"?"Available":x?.status, updatedAt:nowIso()}, "update")) toast("Service logged for today"); break; }
+    /* linking */
+    case "linkSelf": { const t = tById(V("selfLink")); if (t && await linkProfile(t, S.uid)) toast(`Linked you to ${t.name}`); break; }
+    case "linkMeTo": { const t = tById(id); if (t && await linkProfile(t, S.uid)) { toast(`Linked you to ${t.name}`); closeDrawer(); } break; }
+    case "pick": { const t = tById(D.id); if (S.team.some(x=>x.uid===id)) return toast("That account is already linked to another profile."); if (t && await linkProfile(t, id)) { toast(`${t.name} is linked`); closeDrawer(); } break; }
+    case "unlink": { const t = tById(id); if (t && await put(`team/${id}`, {uid:null}, "update")) { toast("Unlinked. Their past progress stays under their account."); closeDrawer(); } break; }
+    case "claim": { const t = tById(V("claimSel")); if (!t) return; if (await put(`work/${S.uid}`, {claim:t.id, at:nowIso()})) toast("Request sent to the admins"); break; }
+    case "approveClaim": { const c = S.claims.find(x=>x.id===id), t = c && tById(c.claim); if (t && await linkProfile(t, id)) { await put(`work/${id}`, {claim:null, confirmedAt:nowIso()}, "update"); toast(`${t.name} is linked`); } break; }
+    case "rejectClaim": if (await put(`work/${id}`, {claim:null}, "update")) toast("Request declined"); break;
+    case "clearSamples": { const n = $(".notice"); n.innerHTML = `<span><strong>Remove all sample records?</strong> This clears the example people, jobs, progress, kit and vendors for everyone.</span><span style="margin-left:auto;display:flex;gap:8px"><button class="btn sm danger" type="button" data-act="reallyClear">Remove samples</button><button class="btn sm" type="button" data-act="cancelClear">Keep them</button></span>`; break; }
+    case "cancelClear": render(); break;
+    case "reallyClear": { let n = 0; for (const c of ["jobs","equipment","vendors"]) for (const r of S[c].filter(x=>x.sample)) { if (await put(`${c}/${r.id}`, null, "delete")) n++; }
+      for (const t of S.team.filter(x=>x.sample)) { const k = keyOf(t); for (const jid of Object.keys(S.work[k]||{})) await put(`work/${k}/jobs/${jid}`, null, "delete"); for (const c of (S.comments[k]||[])) await put(`work/${k}/comments/${c.id}`, null, "delete");
+        if (!t.uid && await put(`team/${t.id}`, null, "delete")) n++; }
+      toast(`Removed ${n} sample records`); break; }
+    case "export": exportCsv(); break;
+  }
+});
+document.addEventListener("change", e => {
+  const t = e.target, map = {fStatus:"status", fMember:"member", fPrio:"prio"};
+  if (map[t.id]) { S.f[map[t.id]] = t.value; render(); }
+  if (t.id==="eStatus") { S.eqf.status = t.value; render(); }
+  if (t.id==="period") { S.period = +t.value; render(); }
+  if (t.id==="viewAs") { S.previewId = t.value || null; render(); if (S.previewId) location.hash = "my"; }
+  if (t.id && t.id.startsWith("sd_") && t.value) { const cb = document.getElementById("st_"+t.id.slice(3)); if (cb) cb.checked = true; }
+});
+let qT; document.addEventListener("input", e => {
+  if (e.target.id==="q"||e.target.id==="eq") { clearTimeout(qT); const v = e.target.value, id = e.target.id; qT = setTimeout(()=>{ if (id==="q") S.f.q = v; else S.eqf.q = v; render(); },160); }
+  if (e.target.id==="pSearch") peopleSearch(e.target.value);
+});
+document.addEventListener("focusin", e => { if (e.target.id==="pSearch" && !e.target.value) peopleSearch(""); });
+async function peopleSearch(q){
+  const box = $("#pResults"); if (!box) return;
+  if (!S.user) { box.innerHTML = `<p class="empty-line">People search isn't available in this view.</p>`; return; }
+  const hits = await S.user.search(q);
+  if ($("#pSearch")?.value !== q && q !== "") return;
+  box.innerHTML = ""; if (!hits.length) { box.innerHTML = `<p class="empty-line">${q?"No one matches. Try another spelling.":"Start typing a name."}</p>`; return; }
+  hits.forEach(h => { const b = document.createElement("button"); b.type = "button"; b.className = "link-row"; b.dataset.act = "pick"; b.dataset.id = h.id;
+    const img = document.createElement("img"); img.src = h.avatarUrl; img.alt = ""; const sp = document.createElement("span"); sp.textContent = h.name + (h.isMe ? " (you)" : "") + (S.team.some(t=>t.uid===h.id) ? " · already linked" : "");
+    b.append(img, sp); box.append(b); });
+}
+document.addEventListener("keydown", e => {
+  if (e.key==="Escape" && S.drawer) closeDrawer();
+  if ((e.key==="Enter"||e.key===" ") && e.target.matches("tr[data-act],article[data-act]")) { e.preventDefault(); e.target.click(); }
+});
+$("#scrim").addEventListener("click", closeDrawer);
+
+async function exportCsv(){
+  const cols = [["jobId","Job ID"],["priority","Priority"],["_s","Status"],["_m","Assigned to"],["task","Task"],["client","Client"],["format","Deliverable"],["start","Start"],["deadline","Deadline"],["estHours","Est. hours"],["equipment","Equipment"],["vendor","Vendor"],["revs","Revisions"]];
+  const rows = [cols.map(c=>c[1]).join(","), ...filteredJobs().map(j=>({...j, revs:(j.reviews||[]).length})).map(j=>cols.map(([k])=>`"${String(j[k]??"").replace(/"/g,'""')}"`).join(","))].join("\n");
+  if (!S.dl) return toast("Export isn't available in this view.");
+  try { await S.dl.save({filename:`agency-x-production-jobs-${ymd(today())}.csv`, data:new Blob([rows],{type:"text/csv"})}); } catch(err) { if (err?.code!=="declined") toast("Couldn't export the file."); }
+}
+
+/* ================= data ================= */
+function syncSubs(){
+  const keys = new Set(S.team.map(keyOf));
+  for (const k of Object.keys(S.subs)) if (!keys.has(k)) { S.subs[k].forEach(u=>u()); delete S.subs[k]; delete S.work[k]; delete S.comments[k]; }
+  for (const k of keys) if (!S.subs[k]) {
+    S.work[k] = S.work[k] || {}; S.comments[k] = S.comments[k] || [];
+    S.subs[k] = [
+      S.db.collection(`work/${k}/jobs`).onSnapshot(s=>{ S.work[k] = Object.fromEntries(s.docs.map(d=>[d.id,d.data()])); refresh(); }, ()=>{}),
+      S.db.collection(`work/${k}/comments`).onSnapshot(s=>{ S.comments[k] = s.docs.map(d=>({...d.data(), id:d.id})); refresh(); }, ()=>{})];
+  }
+}
+let rT; function refresh(){ clearTimeout(rT); rT = setTimeout(()=>{ const typing = S.drawer && $("#drawer").contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+  const mainTyping = /^(q|eq|selfLink|claimSel)$/.test(document.activeElement?.id||"");
+  if (!mainTyping) render(); else renderChrome();
+  if (S.drawer && !typing && S.drawer.kind==="task") drawDrawer(); }, 60); }
+
+try { const m = localStorage.getItem("bp-mode"); if (m==="board"||m==="table") S.jobsMode = m; } catch(_){}
+window.addEventListener("hashchange", route);
+route();
+const live = (on,t) => { $("#live").classList.toggle("on",on); $("#liveText").textContent = t; };
+(async () => {
+  const claude = DEMO;
+  if (!claude?.use) { S.offline = true; live(false,"Offline"); render(); return; }
+  const [db, user, dl] = await Promise.all([claude.use("db"), claude.use("user"), claude.use("downloads")]);
+  S.dl = dl; S.user = user;
+  if (!db) { S.offline = true; live(false,"Not connected"); render(); return; }
+  S.db = db;
+  try { S.uid = await user?.id() ?? null; S.isAdmin = (await user?.canEdit()) ?? false; const w = await user?.can("data.write"); S.canWrite = w !== false; } catch(_){}
+  const timer = setTimeout(()=>{ if (!S.loaded.jobs) live(false,"Still connecting"); }, 10000);
+  for (const c of ["team","jobs","equipment","vendors"]) {
+    db.collection(c).onSnapshot(snap => {
+      S[c] = snap.docs.map(d=>({...d.data(), id:d.id}));
+      if (!snap.metadata.fromCache || snap.size) { S.loaded[c] = true; }
+      if (!snap.metadata.fromCache) { clearTimeout(timer); live(true,"Demo"); }
+      if (c==="team") syncSubs();
+      refresh();
+    }, err => { S.loaded[c] = true; live(false, err?.code==="revoked"?"Access changed":"Disconnected"); refresh(); });
+  }
+  db.collection("work").onSnapshot(s => { S.claims = s.docs.map(d=>({...d.data(), id:d.id})); refresh(); }, ()=>{});
+  render();
+})();
+})();
+</script>
+</body></html>
